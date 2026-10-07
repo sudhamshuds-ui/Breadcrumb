@@ -2,14 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  AnimatePresence,
-  animate,
-  motion,
-  useMotionValue,
-  useReducedMotion,
-  useTransform,
-} from "motion/react";
+import { AnimatePresence, motion, useReducedMotion, useTransform } from "motion/react";
 import { Heart, Play, Volume2, VolumeX } from "lucide-react";
 import { reels } from "@/lib/data/reels";
 import { getThread } from "@/lib/data/threads";
@@ -29,7 +22,7 @@ const CHROME_BOTTOM = 0; // chrome sits just above the nav band, inside the vide
 const CHIP_BOTTOM = NAV_H + 104; // above the creator row and caption
 const HANDLE_TOP = 268;
 const SHEET_TOP_RATIO = 0.4;
-const SWIPE_SPRING = { type: "spring", stiffness: 300, damping: 34 } as const;
+const SETTLE_MS = 90; // scroll is "done" after this long without a scroll event
 const ENABLED_KEY = "crumb.enabled";
 
 interface Burst {
@@ -59,6 +52,8 @@ export function ReelsApp() {
   const [frameH, setFrameH] = useState(844);
 
   const viewportRef = useRef<HTMLDivElement>(null);
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const indexRef = useRef(startIndex);
   const pageH = frameH - NAV_H; // one reel = the video area above the nav
   const reel = reels[index];
   const thread = getThread(reel.threadId);
@@ -76,6 +71,12 @@ export function ReelsApp() {
     return () => ro.disconnect();
   }, []);
 
+  // Keep the current reel in place when the frame size changes (and on load).
+  useLayoutEffect(() => {
+    const el = scrollerRef.current;
+    if (el) el.scrollTop = indexRef.current * pageH;
+  }, [pageH]);
+
   // ---- persistence: remember if Crumb was turned off ----------------------
   useEffect(() => {
     if (readStore<boolean>(ENABLED_KEY, true) === false) dispatch({ type: "TURN_OFF" });
@@ -84,12 +85,6 @@ export function ReelsApp() {
     if (crumb.status === "off") writeStore(ENABLED_KEY, false);
     else writeStore(ENABLED_KEY, true);
   }, [crumb.status]);
-
-  // ---- vertical feed position ---------------------------------------------
-  const y = useMotionValue(-startIndex * (844 - NAV_H));
-  useEffect(() => {
-    animate(y, -index * pageH, reduce ? { duration: 0.2 } : SWIPE_SPRING);
-  }, [index, pageH, reduce, y]);
 
   // ---- reel change: reset playback and Crumb -------------------------------
   const firstEnter = useRef(true);
@@ -121,23 +116,54 @@ export function ReelsApp() {
     return () => clearTimeout(id);
   }, [toast]);
 
-  // Changing reel always starts the new one playing.
-  const goTo = useCallback((next: number) => {
-    setIndex(Math.min(reels.length - 1, Math.max(0, next)));
-    setPaused(false);
-  }, []);
-  const go = useCallback((dir: 1 | -1) => goTo(index + dir), [goTo, index]);
-
   const blocked = captionOpen || crumb.status === "peek" || crumb.menuOpen;
 
-  // ---- feed gestures: swipe, tap (pause/play), double-tap (like), hold (pause while held)
+  // ---- vertical feed: native snap scrolling, like the real app ------------
+  // The browser does the swipe (momentum, snap, rubber-banding); we only read
+  // where it settled. That is what makes it feel like Instagram on a phone.
+  const scrollToIndex = useCallback(
+    (i: number) => {
+      const el = scrollerRef.current;
+      if (!el) return;
+      const target = Math.min(reels.length - 1, Math.max(0, i));
+      el.scrollTo({ top: target * pageH, behavior: reduce ? "auto" : "smooth" });
+    },
+    [pageH, reduce],
+  );
+
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const swipingRef = useRef(false);
+  const onScroll = () => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    if (!swipingRef.current) {
+      swipingRef.current = true;
+      setSwiping(true);
+    }
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(() => {
+      swipingRef.current = false;
+      setSwiping(false);
+      const next = Math.round(el.scrollTop / pageH);
+      if (next !== indexRef.current) {
+        indexRef.current = next;
+        setIndex(next);
+        setPaused(false); // a new reel always starts playing
+      }
+    }, SETTLE_MS);
+  };
+
+  // ---- taps: tap (pause/play), double-tap (like), hold (pause while held) --
+  // On touch, the browser cancels the pointer as soon as a swipe starts, so a
+  // swipe never counts as a tap. A mouse can drag the feed on desktop.
   const lastTap = useRef(0);
   const singleTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onPointerDown = (e: React.PointerEvent) => {
     if ((e.target as HTMLElement).closest("[data-interactive]")) return;
     const el = viewportRef.current;
-    if (!el) return;
+    const scroller = scrollerRef.current;
+    if (!el || !scroller) return;
     if (crumb.menuOpen) {
       dispatch({ type: "CLOSE_MENU" });
       return;
@@ -146,16 +172,18 @@ export function ReelsApp() {
 
     const rect = el.getBoundingClientRect();
     const scale = rect.height / el.offsetHeight;
+    const isMouse = e.pointerType === "mouse";
     const startY = e.clientY;
-    const baseY = -index * pageH;
+    const startScroll = scroller.scrollTop;
     let moved = false;
     let held = false;
+    let cancelled = false;
     let lastY = e.clientY;
     let lastT = performance.now();
-    let velocity = 0; // px per ms, in frame units
+    let velocity = 0;
 
     const holdTimer = setTimeout(() => {
-      if (!moved) {
+      if (!moved && !cancelled) {
         held = true;
         setHolding(true);
       }
@@ -166,35 +194,42 @@ export function ReelsApp() {
       if (!moved && Math.abs(dy) > 8) {
         moved = true;
         clearTimeout(holdTimer);
-        setSwiping(true);
+        // Mouse drag: scroll by hand, with snapping paused until release.
+        if (isMouse) scroller.style.scrollSnapType = "none";
       }
-      if (!moved) return;
-      const atEdge = (index === 0 && dy > 0) || (index === reels.length - 1 && dy < 0);
-      y.set(baseY + (atEdge ? dy * 0.3 : dy));
+      if (!moved || !isMouse) return;
+      scroller.scrollTop = startScroll - dy;
       const now = performance.now();
       velocity = (ev.clientY - lastY) / scale / Math.max(1, now - lastT);
       lastY = ev.clientY;
       lastT = now;
     };
 
-    const up = (ev: PointerEvent) => {
+    const end = (ev: PointerEvent) => {
       window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
-      window.removeEventListener("pointercancel", up);
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", end);
       clearTimeout(holdTimer);
 
       if (held) {
         setHolding(false);
         return;
       }
+      // Touch swipe: the browser took over (pointercancel). Nothing to do.
+      if (ev.type === "pointercancel") {
+        cancelled = true;
+        return;
+      }
       if (moved) {
-        setSwiping(false);
-        const dy = (ev.clientY - startY) / scale;
-        let next = index;
-        if (dy < -pageH * 0.18 || velocity < -0.5) next = Math.min(reels.length - 1, index + 1);
-        else if (dy > pageH * 0.18 || velocity > 0.5) next = Math.max(0, index - 1);
-        if (next === index) animate(y, baseY, SWIPE_SPRING);
-        else goTo(next);
+        if (isMouse) {
+          const dy = (ev.clientY - startY) / scale;
+          let next = indexRef.current;
+          if (dy < -pageH * 0.18 || velocity < -0.5) next += 1;
+          else if (dy > pageH * 0.18 || velocity > 0.5) next -= 1;
+          scrollToIndex(next);
+          // Turn snapping back on only after the glide, or it yanks back mid-way.
+          setTimeout(() => (scroller.style.scrollSnapType = ""), 500);
+        }
         return;
       }
 
@@ -203,7 +238,7 @@ export function ReelsApp() {
       if (now - lastTap.current < 280) {
         if (singleTapTimer.current) clearTimeout(singleTapTimer.current);
         lastTap.current = 0;
-        setLiked((l) => ({ ...l, [reel.id]: true }));
+        setLiked((l) => ({ ...l, [reels[indexRef.current].id]: true }));
         const burst = {
           id: now,
           x: (ev.clientX - rect.left) / scale,
@@ -218,16 +253,8 @@ export function ReelsApp() {
     };
 
     window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up);
-    window.addEventListener("pointercancel", up);
-  };
-
-  const wheelLock = useRef(false);
-  const onWheel = (e: React.WheelEvent) => {
-    if (blocked || wheelLock.current || Math.abs(e.deltaY) < 20) return;
-    wheelLock.current = true;
-    go(e.deltaY > 0 ? 1 : -1);
-    setTimeout(() => (wheelLock.current = false), 700);
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", end);
   };
 
   useEffect(() => {
@@ -238,12 +265,12 @@ export function ReelsApp() {
         setCaptionOpen(false);
       }
       if (blocked) return;
-      if (e.key === "ArrowDown") go(1);
-      if (e.key === "ArrowUp") go(-1);
+      if (e.key === "ArrowDown") scrollToIndex(indexRef.current + 1);
+      if (e.key === "ArrowUp") scrollToIndex(indexRef.current - 1);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [blocked, go]);
+  }, [blocked, scrollToIndex]);
 
   // ---- navigation to the Breadcrumb thread --------------------------------
   const openThread = () => {
@@ -251,10 +278,12 @@ export function ReelsApp() {
     router.push(reel.threadId ? `/thread/${reel.threadId}?${back}` : `/thread/new?${back}`);
   };
 
-  const openCaption = () => {
+  // Stable callbacks so the memoised reel chrome doesn't re-render every tick.
+  const openCaption = useCallback(() => {
     setCaptionOpen(true);
-    if (crumb.status === "signals") dispatch({ type: "REVEAL" });
-  };
+    dispatch({ type: "CAPTION_OPENED" });
+  }, []);
+  const toggleLike = useCallback((id: string) => setLiked((l) => ({ ...l, [id]: !l[id] })), []);
 
   const progress = useTransform(time, (v) => `${(v / reel.durationSec) * 100}%`);
   const sheetTop = Math.round(frameH * SHEET_TOP_RATIO);
@@ -276,7 +305,6 @@ export function ReelsApp() {
       data-crumb-found={crumb.found.length}
       className="absolute inset-0 overflow-clip bg-black"
       onPointerDown={onPointerDown}
-      onWheel={onWheel}
     >
       {/* Video area: shrinks to the top when the caption sheet opens */}
       <motion.div
@@ -290,38 +318,48 @@ export function ReelsApp() {
         transition={reduce ? { duration: 0.2 } : { type: "spring", stiffness: 380, damping: 40 }}
         onClick={() => captionOpen && setCaptionOpen(false)}
       >
-        <motion.div className="absolute inset-x-0 top-0" style={{ y, height: pageH * reels.length }}>
-          {reels.map((r, i) => (
-            <div
-              key={r.id}
-              className="absolute inset-x-0"
-              style={{ top: i * pageH, height: pageH }}
-            >
-              <ReelScene
-                reel={r}
-                t={i === index ? t : 0}
-                time={i === index ? time : null}
-                active={i === index}
-              />
-              <motion.div
-                className="absolute inset-0"
-                animate={{ opacity: captionOpen || holding ? 0 : 1 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ReelChrome
-                  reel={r}
-                  liked={Boolean(liked[r.id])}
-                  onLike={() => setLiked((l) => ({ ...l, [r.id]: !l[r.id] }))}
-                  onOpenCaption={openCaption}
-                  bottomInset={CHROME_BOTTOM}
-                />
-              </motion.div>
-            </div>
-          ))}
-        </motion.div>
+        <div
+          ref={scrollerRef}
+          onScroll={onScroll}
+          className="absolute inset-0 snap-y snap-mandatory overscroll-contain"
+          style={{ overflowY: blocked ? "hidden" : "scroll", touchAction: "pan-y" }}
+        >
+          {reels.map((r, i) => {
+            // Only the playing reel and its neighbours are drawn; the rest are
+            // plain black until you get close. Keeps the phone's GPU free.
+            const near = Math.abs(i - index) <= 1;
+            return (
+              <div key={r.id} className="relative snap-start snap-always" style={{ height: pageH }}>
+                {near && (
+                  <>
+                    <ReelScene
+                      reel={r}
+                      t={i === index ? t : 0}
+                      time={i === index ? time : null}
+                      active={i === index}
+                    />
+                    <motion.div
+                      className="absolute inset-0"
+                      animate={{ opacity: captionOpen || holding ? 0 : 1 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ReelChrome
+                        reel={r}
+                        liked={Boolean(liked[r.id])}
+                        onToggleLike={toggleLike}
+                        onOpenCaption={openCaption}
+                        bottomInset={CHROME_BOTTOM}
+                      />
+                    </motion.div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
 
         {/* Progress bar */}
-        <div className="absolute inset-x-0 bottom-0 h-[2px] bg-white/20">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] bg-white/20">
           <motion.div className="h-full bg-white/90" style={{ width: progress }} />
         </div>
       </motion.div>
@@ -367,7 +405,8 @@ export function ReelsApp() {
             data-interactive
             onClick={() => setMuted((m) => !m)}
             aria-label={muted ? "Turn sound on" : "Turn sound off"}
-            className="absolute right-2 top-[98px] z-20 flex size-11 items-center justify-center text-white"
+            className="absolute right-2 z-20 flex size-11 items-center justify-center text-white"
+            style={{ top: "calc(var(--top-inset) + 46px)" }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -382,7 +421,7 @@ export function ReelsApp() {
       <AnimatePresence>
         {!captionOpen && !holding && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <TopBar />
+            <TopBar crumbOff={crumb.status === "off"} onTurnOn={() => dispatch({ type: "TURN_ON" })} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -460,7 +499,7 @@ export function ReelsApp() {
             transition={{ duration: 0.24 }}
           >
             <span className="text-[14px] font-medium tracking-tight">
-              {toast === "off" ? "Crumb is off. Tap the top pill to turn it on." : "Crumb is paused"}
+              {toast === "off" ? "Crumb is off" : "Crumb is paused"}
             </span>
             <button
               type="button"

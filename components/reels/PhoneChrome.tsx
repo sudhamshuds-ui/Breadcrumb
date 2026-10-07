@@ -9,7 +9,7 @@ export function StatusBar({ crumbStatus, onIslandTap }: { crumbStatus: CrumbStat
   const on = crumbStatus !== "off";
   const found = crumbStatus === "signals" || crumbStatus === "peek";
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex h-[50px] items-center justify-between px-7 text-white">
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex h-[50px] items-center justify-between px-7 text-white max-[499px]:hidden">
       <span className="w-14 text-[16px] font-semibold tracking-tight">8:31</span>
 
       {/* Dynamic-island style pill. Crumb lives here as a tiny live indicator. */}
@@ -51,13 +51,30 @@ function Bars() {
   );
 }
 
-export function TopBar() {
+// On a real phone the device draws its own status bar, so the fake one is
+// hidden and Crumb's "turn on" shortcut moves into the top bar.
+export function TopBar({ crumbOff, onTurnOn }: { crumbOff: boolean; onTurnOn: () => void }) {
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-[52px] z-20 flex h-11 items-center justify-between px-4 text-white">
+    <div className="pointer-events-none absolute inset-x-0 z-20 flex h-11 items-center justify-between px-4 text-white" style={{ top: "var(--top-inset)" }}>
       <span className="flex items-center gap-1 text-[22px] font-bold tracking-tight drop-shadow">
         Reels <ChevronDown size={18} strokeWidth={2.6} />
       </span>
-      <Camera size={25} strokeWidth={1.9} className="drop-shadow" />
+      <span className="flex items-center gap-3">
+        {crumbOff && (
+          <button
+            type="button"
+            data-interactive
+            onClick={onTurnOn}
+            aria-label="Turn Crumb on"
+            className="pointer-events-auto flex size-11 items-center justify-center min-[500px]:hidden"
+          >
+            <span className="flex size-[26px] items-center justify-center rounded-full bg-crumb-surface opacity-60">
+              <CrumbGlyph size={13} />
+            </span>
+          </button>
+        )}
+        <Camera size={25} strokeWidth={1.9} className="drop-shadow" />
+      </span>
     </div>
   );
 }
@@ -74,7 +91,7 @@ export function BottomNav({ height }: { height: number }) {
           <span className="size-[25px] rounded-full bg-gradient-to-br from-[#C9B79C] to-[#6E5A44] ring-2 ring-white/90" />
         </NavIcon>
       </nav>
-      <div className="absolute bottom-2 left-1/2 h-[5px] w-[134px] -translate-x-1/2 rounded-full bg-white" />
+      <div className="absolute bottom-2 left-1/2 h-[5px] w-[134px] -translate-x-1/2 rounded-full bg-white max-[499px]:hidden" />
     </div>
   );
 }

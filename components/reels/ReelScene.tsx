@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { AnimatePresence, motion, useReducedMotion, useTransform, type MotionValue } from "motion/react";
 import type { Reel, SceneBeat } from "@/lib/types";
 import { activeBeat, activeLine, wordsShown } from "@/lib/playback";
@@ -17,7 +18,9 @@ interface Props {
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-export function ReelScene({ reel, t, time, active }: Props) {
+// Memoised: reels that are not playing get fixed props, so they skip the
+// 20-times-a-second re-render the playing reel needs.
+export const ReelScene = memo(function ReelScene({ reel, t, time, active }: Props) {
   const reduce = useReducedMotion();
   const beat = activeBeat(reel.beats, t);
   const line = activeLine(reel.transcript, t);
@@ -64,13 +67,12 @@ export function ReelScene({ reel, t, time, active }: Props) {
         </div>
       )}
 
-      <svg className="reel-grain pointer-events-none absolute inset-0 size-full" aria-hidden>
-        <filter id={`grain-${reel.id}`}>
-          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves={2} stitchTiles="stitch" />
-          <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.55 0" />
-        </filter>
-        <rect width="100%" height="100%" filter={`url(#grain-${reel.id})`} />
-      </svg>
+      {/* Pre-made noise tile: a live SVG noise filter is far too slow on phones */}
+      <div
+        className="reel-grain pointer-events-none absolute inset-0"
+        style={{ backgroundImage: "url(/grain.png)", backgroundSize: "128px 128px" }}
+        aria-hidden
+      />
       <div
         className="pointer-events-none absolute inset-0"
         style={{
@@ -80,7 +82,7 @@ export function ReelScene({ reel, t, time, active }: Props) {
       />
     </div>
   );
-}
+});
 
 function Beat({ beat, reel, time }: { beat: SceneBeat; reel: Reel; time: MotionValue<number> | null }) {
   switch (beat.kind) {
@@ -220,7 +222,7 @@ function Product({ reel, time, size }: { reel: Reel; time: MotionValue<number> |
 }
 
 function Bokeh({ accent, animated, seed }: { accent: string; animated: boolean; seed: number }) {
-  const dots = Array.from({ length: 7 }, (_, i) => {
+  const dots = Array.from({ length: 5 }, (_, i) => {
     const r = ((seed * (i + 3) * 37) % 100) / 100;
     return {
       left: `${(i * 17 + seed * 7) % 100}%`,
@@ -241,9 +243,9 @@ function Bokeh({ accent, animated, seed }: { accent: string; animated: boolean; 
             top: d.top,
             width: d.size,
             height: d.size,
-            background: i % 2 ? accent : "#FFFFFF",
-            opacity: d.opacity,
-            filter: "blur(18px)",
+            // Soft edge from a radial gradient, not filter: blur (much cheaper to draw)
+            background: `radial-gradient(circle, ${i % 2 ? accent : "#FFFFFF"} 0%, transparent 70%)`,
+            opacity: d.opacity * 1.6,
             animation: animated ? `bokeh-drift ${7 + i}s ease-in-out ${d.delay}s infinite` : undefined,
           }}
         />

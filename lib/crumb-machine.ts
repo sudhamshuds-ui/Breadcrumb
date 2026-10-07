@@ -24,6 +24,7 @@ export type CrumbEvent =
   | { type: "SIGNAL_DUE"; id: string }
   | { type: "SCAN_COMPLETE" }
   | { type: "REVEAL" }
+  | { type: "CAPTION_OPENED" }
   | { type: "TUCK" }
   | { type: "TOGGLE_MENU" }
   | { type: "CLOSE_MENU" }
@@ -77,6 +78,11 @@ export function crumbReducer(state: CrumbState, event: CrumbEvent): CrumbState {
       const startScan = state.mode === "swipe-to-scan" && state.status === "dormant";
       return { ...state, revealed: true, status: startScan ? "scanning" : state.status };
     }
+
+    case "CAPTION_OPENED":
+      // Opening the caption brings Crumb out beside the shrunk reel, but only
+      // when it has something to show.
+      return state.status === "signals" ? { ...state, revealed: true } : state;
 
     case "TUCK":
       return {

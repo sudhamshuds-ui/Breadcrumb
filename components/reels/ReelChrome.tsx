@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { motion } from "motion/react";
 import { Bookmark, Ellipsis, Heart, MessageCircle, Repeat2, Send } from "lucide-react";
 import type { Reel } from "@/lib/types";
@@ -10,12 +11,13 @@ import type { Reel } from "@/lib/types";
 interface Props {
   reel: Reel;
   liked: boolean;
-  onLike: () => void;
+  onToggleLike: (id: string) => void;
   onOpenCaption: () => void;
   bottomInset: number;
 }
 
-export function ReelChrome({ reel, liked, onLike, onOpenCaption, bottomInset }: Props) {
+export const ReelChrome = memo(function ReelChrome({ reel, liked, onToggleLike, onOpenCaption, bottomInset }: Props) {
+  const onLike = () => onToggleLike(reel.id);
   return (
     <>
       {/* Right action rail */}
@@ -68,14 +70,15 @@ export function ReelChrome({ reel, liked, onLike, onOpenCaption, bottomInset }: 
           type="button"
           data-interactive
           onClick={onOpenCaption}
-          className="mt-2.5 line-clamp-2 text-left text-[13.5px] leading-[1.3] text-white/95"
+          className="mt-2.5 block w-full text-left text-[13.5px] leading-[1.3] text-white/95"
         >
-          {reel.caption}
+          {/* Clamp on an inner span: Safari ignores line-clamp on a <button> */}
+          <span className="line-clamp-2">{reel.caption}</span>
         </button>
       </div>
     </>
   );
-}
+});
 
 function RailButton({
   children,

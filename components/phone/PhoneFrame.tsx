@@ -24,7 +24,7 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
         style={{ transform: `scale(${scale})` }}
       >
         <div
-          className="phone-ui relative overflow-clip bg-black max-[499px]:!h-dvh max-[499px]:!w-screen max-[499px]:!rounded-none max-[499px]:!shadow-none"
+          className="phone-ui relative overflow-clip bg-black max-[499px]:!fixed max-[499px]:!inset-0 max-[499px]:!h-auto max-[499px]:!w-auto max-[499px]:!rounded-none max-[499px]:!shadow-none"
           style={{
             width: W,
             height: H,
