@@ -5,6 +5,13 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  --color-crumb-surface: var(--crumb-surface);
+  --color-crumb-ink: var(--crumb-ink);
+  --color-crumb-muted: var(--crumb-muted);
+  --color-crumb-glow: var(--crumb-glow);
+  --color-crumb-tint: var(--crumb-tint);
+  --color-crumb-deep: var(--crumb-deep);
+  --color-sheet: var(--sheet);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
@@ -49,6 +56,14 @@
 }
 
 :root {
+  /* Crumb tokens, taken from the Figma widget frames */
+  --crumb-surface: #f0f0f0;
+  --crumb-ink: #0d0d0d;
+  --crumb-muted: #6b6b6b;
+  --crumb-glow: #ff5454;
+  --crumb-tint: #ffd9d5;
+  --crumb-deep: #b8322a;
+  --sheet: #1c1d21;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -127,4 +142,35 @@
   html {
     @apply font-sans;
   }
+}
+/* Phone UI uses the system font, like a native app. */
+.phone-ui {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  touch-action: none;
+  scrollbar-width: none;
+}
+
+.phone-ui * {
+  scrollbar-width: none;
+}
+
+.reel-grain {
+  mix-blend-mode: overlay;
+  opacity: 0.18;
+}
+
+@keyframes bokeh-drift {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(14px, -18px, 0); }
+}
+
+@keyframes crumb-sheen {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-safe-anim { animation: none !important; }
 }
