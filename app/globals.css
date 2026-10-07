@@ -184,6 +184,17 @@
   }
 }
 
+/* Opened from the home screen: iOS can hand the page a box shorter than the
+   screen (by the status bar's height), leaving a black band under the nav.
+   Size to the full screen instead. */
+@media (max-width: 499px) and (display-mode: standalone) {
+  .phone-ui.phone-ui {
+    top: 0 !important;
+    bottom: auto !important;
+    height: 100lvh !important;
+  }
+}
+
 /* Black behind everything, so no white shows at the screen edges on phones */
 html,
 body {

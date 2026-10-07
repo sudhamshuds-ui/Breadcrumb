@@ -22,7 +22,7 @@ const CHROME_BOTTOM = 0; // chrome sits just above the nav band, inside the vide
 const CHIP_BOTTOM = NAV_H + 104; // above the creator row and caption
 const HANDLE_TOP = 268;
 const SHEET_TOP_RATIO = 0.4;
-const SETTLE_MS = 90; // scroll is "done" after this long without a scroll event
+const SETTLE_MS = 120; // scroll is "done" after this long without a scroll event
 const ENABLED_KEY = "crumb.enabled";
 
 interface Burst {
@@ -133,24 +133,38 @@ export function ReelsApp() {
 
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const swipingRef = useRef(false);
-  const onScroll = () => {
+  const touchingRef = useRef(false);
+
+  // Runs once scrolling has stopped. iOS sometimes leaves a snap unfinished
+  // (resting between two reels); if so, glide to the nearest reel ourselves.
+  const settle = () => {
     const el = scrollerRef.current;
-    if (!el) return;
+    if (!el || touchingRef.current) return; // finger still down: wait for touchend
+    const next = Math.min(reels.length - 1, Math.max(0, Math.round(el.scrollTop / pageH)));
+    if (Math.abs(el.scrollTop - next * pageH) > 2) {
+      scrollToIndex(next); // its scroll events lead back here once aligned
+      return;
+    }
+    swipingRef.current = false;
+    setSwiping(false);
+    if (next !== indexRef.current) {
+      indexRef.current = next;
+      setIndex(next);
+      setPaused(false); // a new reel always starts playing
+    }
+  };
+
+  const scheduleSettle = () => {
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    settleTimer.current = setTimeout(settle, SETTLE_MS);
+  };
+
+  const onScroll = () => {
     if (!swipingRef.current) {
       swipingRef.current = true;
       setSwiping(true);
     }
-    if (settleTimer.current) clearTimeout(settleTimer.current);
-    settleTimer.current = setTimeout(() => {
-      swipingRef.current = false;
-      setSwiping(false);
-      const next = Math.round(el.scrollTop / pageH);
-      if (next !== indexRef.current) {
-        indexRef.current = next;
-        setIndex(next);
-        setPaused(false); // a new reel always starts playing
-      }
-    }, SETTLE_MS);
+    scheduleSettle();
   };
 
   // ---- taps: tap (pause/play), double-tap (like), hold (pause while held) --
@@ -321,6 +335,15 @@ export function ReelsApp() {
         <div
           ref={scrollerRef}
           onScroll={onScroll}
+          onTouchStart={() => (touchingRef.current = true)}
+          onTouchEnd={() => {
+            touchingRef.current = false;
+            scheduleSettle();
+          }}
+          onTouchCancel={() => {
+            touchingRef.current = false;
+            scheduleSettle();
+          }}
           className="absolute inset-0 snap-y snap-mandatory overscroll-contain"
           style={{ overflowY: blocked ? "hidden" : "scroll", touchAction: "pan-y" }}
         >
