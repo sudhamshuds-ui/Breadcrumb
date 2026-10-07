@@ -10,7 +10,7 @@ import {
   useReducedMotion,
   useTransform,
 } from "motion/react";
-import { Heart, Volume2, VolumeX } from "lucide-react";
+import { Heart, Play, Volume2, VolumeX } from "lucide-react";
 import { reels } from "@/lib/data/reels";
 import { getThread } from "@/lib/data/threads";
 import { crumbReducer, initialCrumbState, isListening } from "@/lib/crumb-machine";
@@ -49,7 +49,7 @@ export function ReelsApp() {
   const [index, setIndex] = useState(startIndex);
   const [crumb, dispatch] = useReducer(crumbReducer, undefined, () => initialCrumbState(true));
   const [muted, setMuted] = useState(true);
-  const [muteFlash, setMuteFlash] = useState(0);
+  const [paused, setPaused] = useState(false);
   const [holding, setHolding] = useState(false);
   const [swiping, setSwiping] = useState(false);
   const [captionOpen, setCaptionOpen] = useState(false);
@@ -64,7 +64,7 @@ export function ReelsApp() {
   const thread = getThread(reel.threadId);
   const found = foundSignals(reel, crumb.found);
 
-  const { t, time, seek } = useReelClock(reel.durationSec, !holding, startTime);
+  const { t, time, seek } = useReelClock(reel.durationSec, !holding && !paused, startTime);
 
   // ---- frame size ---------------------------------------------------------
   useLayoutEffect(() => {
@@ -121,14 +121,16 @@ export function ReelsApp() {
     return () => clearTimeout(id);
   }, [toast]);
 
-  const go = useCallback(
-    (dir: 1 | -1) => setIndex((i) => Math.min(reels.length - 1, Math.max(0, i + dir))),
-    [],
-  );
+  // Changing reel always starts the new one playing.
+  const goTo = useCallback((next: number) => {
+    setIndex(Math.min(reels.length - 1, Math.max(0, next)));
+    setPaused(false);
+  }, []);
+  const go = useCallback((dir: 1 | -1) => goTo(index + dir), [goTo, index]);
 
   const blocked = captionOpen || crumb.status === "peek" || crumb.menuOpen;
 
-  // ---- feed gestures: swipe, tap (mute), double-tap (like), hold (pause) --
+  // ---- feed gestures: swipe, tap (pause/play), double-tap (like), hold (pause while held)
   const lastTap = useRef(0);
   const singleTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -192,7 +194,7 @@ export function ReelsApp() {
         if (dy < -pageH * 0.18 || velocity < -0.5) next = Math.min(reels.length - 1, index + 1);
         else if (dy > pageH * 0.18 || velocity > 0.5) next = Math.max(0, index - 1);
         if (next === index) animate(y, baseY, SWIPE_SPRING);
-        else setIndex(next);
+        else goTo(next);
         return;
       }
 
@@ -211,10 +213,7 @@ export function ReelsApp() {
         setTimeout(() => setBursts((b) => b.filter((x) => x.id !== burst.id)), 900);
       } else {
         lastTap.current = now;
-        singleTapTimer.current = setTimeout(() => {
-          setMuted((m) => !m);
-          setMuteFlash(Date.now());
-        }, 280);
+        singleTapTimer.current = setTimeout(() => setPaused((p) => !p), 280);
       }
     };
 
@@ -344,10 +343,37 @@ export function ReelsApp() {
         ))}
       </AnimatePresence>
 
-      {/* Mute feedback */}
+      {/* Paused: play icon stays until the next tap */}
       <AnimatePresence>
-        {muteFlash > 0 && (
-          <MuteFlash key={muteFlash} muted={muted} onDone={() => setMuteFlash(0)} />
+        {paused && !captionOpen && (
+          <motion.div
+            key="paused"
+            className="pointer-events-none absolute left-1/2 top-[42%] z-30 flex size-[72px] -translate-x-1/2 items-center justify-center rounded-full bg-black/45 text-white"
+            initial={{ opacity: 0, scale: reduce ? 1 : 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: reduce ? 1 : 1.15 }}
+            transition={{ duration: 0.18 }}
+          >
+            <Play size={32} fill="currentColor" strokeWidth={0} className="translate-x-0.5" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Sound toggle */}
+      <AnimatePresence>
+        {!captionOpen && !holding && (
+          <motion.button
+            type="button"
+            data-interactive
+            onClick={() => setMuted((m) => !m)}
+            aria-label={muted ? "Turn sound on" : "Turn sound off"}
+            className="absolute right-4 top-[104px] z-20 flex size-8 items-center justify-center rounded-full bg-black/40 text-white"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+          </motion.button>
         )}
       </AnimatePresence>
 
@@ -447,23 +473,5 @@ export function ReelsApp() {
         )}
       </AnimatePresence>
     </div>
-  );
-}
-
-function MuteFlash({ muted, onDone }: { muted: boolean; onDone: () => void }) {
-  useEffect(() => {
-    const id = setTimeout(onDone, 700);
-    return () => clearTimeout(id);
-  }, [onDone]);
-  return (
-    <motion.div
-      className="pointer-events-none absolute left-1/2 top-[42%] z-30 flex size-16 -translate-x-1/2 items-center justify-center rounded-full bg-black/55 text-white"
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.15 }}
-    >
-      {muted ? <VolumeX size={26} /> : <Volume2 size={26} />}
-    </motion.div>
   );
 }
