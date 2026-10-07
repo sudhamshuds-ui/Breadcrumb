@@ -6,11 +6,20 @@
 
 @theme inline {
   --color-crumb-surface: var(--crumb-surface);
+  --color-crumb-card: var(--crumb-card);
   --color-crumb-ink: var(--crumb-ink);
+  --color-crumb-body: var(--crumb-body);
   --color-crumb-muted: var(--crumb-muted);
+  --color-crumb-hairline: var(--crumb-hairline);
+  --color-crumb-hairline-strong: var(--crumb-hairline-strong);
+  --color-crumb-accent: var(--crumb-accent);
+  --color-crumb-accent-active: var(--crumb-accent-active);
   --color-crumb-glow: var(--crumb-glow);
-  --color-crumb-tint: var(--crumb-tint);
-  --color-crumb-deep: var(--crumb-deep);
+  --color-sig-peach: var(--sig-peach);
+  --color-sig-mint: var(--sig-mint);
+  --color-sig-blue: var(--sig-blue);
+  --color-sig-lavender: var(--sig-lavender);
+  --color-sig-gold: var(--sig-gold);
   --color-sheet: var(--sheet);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -56,13 +65,26 @@
 }
 
 :root {
-  /* Crumb tokens, taken from the Figma widget frames */
-  --crumb-surface: #f0f0f0;
-  --crumb-ink: #0d0d0d;
-  --crumb-muted: #6b6b6b;
+  /* Crumb tokens: surfaces, ink and accent from DESIGN.md (Cursor),
+     glow from the Figma widget frames */
+  --crumb-surface: #f7f7f4;
+  --crumb-card: #ffffff;
+  --crumb-ink: #26251e;
+  --crumb-body: #5a5852;
+  --crumb-muted: #6e6b62; /* DESIGN.md #807d72 darkened to pass 4.5:1 on cream */
+  --crumb-hairline: #e6e5e0;
+  --crumb-hairline-strong: #cfcdc4;
+  /* DESIGN.md orange #f54e00 fails 4.5:1 with white text, so buttons use
+     its own pressed shade #d04200 and press to a deeper one */
+  --crumb-accent: #d04200;
+  --crumb-accent-active: #b83a00;
   --crumb-glow: #ff5454;
-  --crumb-tint: #ffd9d5;
-  --crumb-deep: #b8322a;
+  /* Signal kinds use the DESIGN.md pastel timeline palette */
+  --sig-peach: #dfa88f;
+  --sig-mint: #9fc9a2;
+  --sig-blue: #9fbbe0;
+  --sig-lavender: #c0a8dd;
+  --sig-gold: #c08532;
   --sheet: #1c1d21;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -167,10 +189,25 @@
   50% { transform: translate3d(14px, -18px, 0); }
 }
 
-@keyframes crumb-sheen {
+@keyframes crumb-spin {
   to { transform: rotate(360deg); }
+}
+
+/* Crumb's own type: Geist stands in for the licensed CursorGothic */
+.crumb-type {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  letter-spacing: -0.01em;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .motion-safe-anim { animation: none !important; }
+}
+
+/* Solid fallback for the glass tray when transparency is reduced */
+@media (prefers-reduced-transparency: reduce) {
+  .crumb-glass {
+    background-color: rgb(38 37 30 / 0.94);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
 }

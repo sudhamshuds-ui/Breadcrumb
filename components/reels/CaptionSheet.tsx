@@ -6,7 +6,7 @@ import { CircleDollarSign, Heart, ImageIcon, Smile } from "lucide-react";
 import type { Reel, Signal } from "@/lib/types";
 import { captionParts, moneyTag } from "@/lib/playback";
 import { CrumbGlyph } from "@/components/crumb/CrumbGlyph";
-import { SignalIcon } from "@/components/crumb/SignalIcon";
+import { KIND_TINT, KindBadge } from "@/components/crumb/SignalIcon";
 import { Avatar } from "./ReelChrome";
 
 interface Props {
@@ -68,13 +68,16 @@ export function CaptionSheet({ open, reel, top, signals, onClose, onOpenPeek }: 
                 onClick={onOpenPeek}
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0, transition: { delay: 0.2 } }}
-                className="mt-3 inline-flex h-7 items-center gap-1.5 rounded-full bg-crumb-tint pl-1 pr-2.5 text-[12.5px] font-semibold text-crumb-deep"
+                // 44px tap area around a 28px pill
+                className="crumb-type group mt-1.5 -mb-1.5 flex h-11 items-center"
               >
-                <span className="flex size-5 items-center justify-center rounded-full bg-crumb-surface">
-                  <CrumbGlyph size={10} />
+                <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-sig-peach pl-1 pr-2.5 text-[12.5px] font-medium text-crumb-ink group-active:opacity-80">
+                  <span className="flex size-5 items-center justify-center rounded-full bg-crumb-surface">
+                    <CrumbGlyph size={10} />
+                  </span>
+                  <CircleDollarSign size={13} strokeWidth={2.2} />
+                  {tag}
                 </span>
-                <CircleDollarSign size={13} strokeWidth={2.4} />
-                {tag}
               </motion.button>
             )}
 
@@ -85,9 +88,12 @@ export function CaptionSheet({ open, reel, top, signals, onClose, onOpenPeek }: 
                     key={i}
                     type="button"
                     onClick={() => setSelected(selected?.id === p.signal!.id ? null : p.signal!)}
-                    className="rounded-[4px] px-0.5 text-left text-white decoration-crumb-glow underline-offset-2"
+                    className="rounded-[4px] px-0.5 text-left text-white"
                     style={{
-                      background: selected?.id === p.signal.id ? "rgba(255,84,84,0.6)" : "rgba(255,84,84,0.32)",
+                      // Tinted by signal kind, same pastel as the chip badge
+                      background: `color-mix(in srgb, ${KIND_TINT[p.signal.kind].solid} ${
+                        selected?.id === p.signal.id ? 70 : 40
+                      }%, transparent)`,
                     }}
                   >
                     {p.text}
@@ -109,12 +115,10 @@ export function CaptionSheet({ open, reel, top, signals, onClose, onOpenPeek }: 
                   transition={{ duration: 0.22 }}
                   className="overflow-hidden"
                 >
-                  <div className="mt-3 flex items-start gap-2.5 rounded-2xl bg-crumb-surface p-3 text-crumb-ink">
-                    <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-crumb-tint text-crumb-deep">
-                      <SignalIcon kind={selected.kind} />
-                    </span>
+                  <div className="crumb-type mt-3 flex items-start gap-2.5 rounded-2xl border border-crumb-hairline-strong bg-crumb-surface p-3 text-crumb-ink">
+                    <KindBadge kind={selected.kind} size={28} />
                     <span className="min-w-0 leading-tight">
-                      <span className="block text-[13px] font-semibold">{selected.label}</span>
+                      <span className="block text-[13px] font-medium">{selected.label}</span>
                       <span className="mt-0.5 block text-[13px] text-crumb-muted">{selected.detail}</span>
                     </span>
                   </div>
@@ -123,12 +127,12 @@ export function CaptionSheet({ open, reel, top, signals, onClose, onOpenPeek }: 
             </AnimatePresence>
 
             {signals.length > 0 && !selected && (
-              <p className="mt-2 flex items-center gap-1.5 text-[12px] text-white/45">
+              <p className="mt-2 flex items-center gap-1.5 text-[12px] text-white/55">
                 <CrumbGlyph size={10} className="opacity-70 invert" /> Tap a highlight to see what Crumb found
               </p>
             )}
 
-            <div className="mt-3 text-[13px] text-white/45">{reel.postedOn}</div>
+            <div className="mt-3 text-[13px] text-white/55">{reel.postedOn}</div>
 
             <div className="mt-4 border-t border-white/10 pt-4">
               {reel.comments.map((c) => (

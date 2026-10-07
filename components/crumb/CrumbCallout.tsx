@@ -5,10 +5,12 @@ import { ArrowUpRight, X } from "lucide-react";
 import type { Signal, SignalKind, Thread } from "@/lib/types";
 import { chipSummary, kindsInOrder, peekLines } from "@/lib/playback";
 import { CrumbGlyph } from "./CrumbGlyph";
-import { SignalIcon, TrustIcon } from "./SignalIcon";
+import { KindBadge, TRUST_TINT, TrustIcon } from "./SignalIcon";
 
 // The chip and the peek card are one surface: tapping the chip grows it
 // into the card (shared layoutId), so the change reads as "this opened".
+// Both sit in a "double bezel": a translucent glass tray (outer shell) holding
+// a cream core, so they read as objects resting on the video.
 
 interface Props {
   mode: "hidden" | "chip" | "peek";
@@ -20,7 +22,13 @@ interface Props {
   onSeeThread: () => void;
 }
 
-const EASE = [0.22, 1, 0.36, 1] as const;
+// Heavy, spring-like settle used across Crumb's motion.
+const EASE = [0.32, 0.72, 0, 1] as const;
+
+// Web glassmorphism approximation (not Apple Liquid Glass). Solid fallback lives in
+// globals.css under prefers-reduced-transparency.
+const SHELL = "crumb-glass bg-white/10 ring-1 ring-white/20 backdrop-blur-xl";
+const CORE_HIGHLIGHT = "inset 0 1px 1px rgba(255,255,255,0.7)";
 
 export function CrumbCallout({ mode, signals, thread, bottom, onOpen, onClose, onSeeThread }: Props) {
   const reduce = useReducedMotion();
@@ -28,6 +36,11 @@ export function CrumbCallout({ mode, signals, thread, bottom, onOpen, onClose, o
 
   return (
     <>
+      {/* Screen readers hear what Crumb found as it updates, without moving focus */}
+      <span role="status" aria-atomic="true" className="sr-only">
+        {mode !== "hidden" && signals.length > 0 ? `Crumb found: ${chipSummary(signals)}` : ""}
+      </span>
+
       {/* Tap outside to dismiss the peek card */}
       <AnimatePresence>
         {mode === "peek" && (
@@ -52,18 +65,24 @@ export function CrumbCallout({ mode, signals, thread, bottom, onOpen, onClose, o
             data-interactive
             layoutId={layoutId}
             onClick={onOpen}
-            className="absolute left-3.5 z-30 flex h-10 max-w-[min(300px,calc(100%-84px))] items-center gap-2 bg-crumb-surface pl-1.5 pr-3.5 text-crumb-ink"
-            style={{ bottom, borderRadius: 20, boxShadow: "0 6px 20px rgba(0,0,0,0.25)" }}
-            initial={{ opacity: 0, y: 10, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
+            aria-haspopup="dialog"
+            className={`crumb-type group absolute left-2.5 z-30 flex max-w-[min(304px,calc(100%-80px))] p-1 text-crumb-ink ${SHELL}`}
+            style={{ bottom: bottom - 4, borderRadius: 26 }}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 10, scale: 0.96 }}
+            animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, transition: { duration: 0.15 } }}
             transition={{ duration: 0.26, ease: EASE }}
             aria-label={`Crumb found: ${chipSummary(signals)}. Tap to see more.`}
           >
-            <KindDots kinds={kindsInOrder(signals)} />
-            <motion.span layout="position" className="truncate text-[13px] font-semibold tracking-tight">
-              {chipSummary(signals)}
-            </motion.span>
+            <span
+              className="flex h-11 min-w-0 items-center gap-2 rounded-[22px] bg-crumb-surface pl-2 pr-3.5 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-active:scale-[0.98]"
+              style={{ boxShadow: CORE_HIGHLIGHT }}
+            >
+              <KindDots kinds={kindsInOrder(signals)} />
+              <motion.span layout="position" className="truncate text-[13px] font-medium">
+                {chipSummary(signals)}
+              </motion.span>
+            </span>
           </motion.button>
         )}
 
@@ -74,8 +93,8 @@ export function CrumbCallout({ mode, signals, thread, bottom, onOpen, onClose, o
             layoutId={layoutId}
             role="dialog"
             aria-label="Crumb peek card"
-            className="absolute left-3.5 z-50 w-[304px] overflow-hidden bg-crumb-surface text-crumb-ink"
-            style={{ bottom, borderRadius: 26, boxShadow: "0 18px 50px rgba(0,0,0,0.45)" }}
+            className={`crumb-type absolute left-2.5 z-50 w-[312px] p-1.5 text-crumb-ink ${SHELL}`}
+            style={{ bottom: bottom - 6, borderRadius: 28 }}
             initial={reduce ? { opacity: 0 } : false}
             animate={{ opacity: 1 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, y: 16, transition: { duration: 0.18 } }}
@@ -87,7 +106,9 @@ export function CrumbCallout({ mode, signals, thread, bottom, onOpen, onClose, o
               if (info.offset.y > 70 || info.velocity.y > 400) onClose();
             }}
           >
-            <PeekBody signals={signals} thread={thread} onClose={onClose} onSeeThread={onSeeThread} />
+            <div className="overflow-hidden rounded-[22px] bg-crumb-surface" style={{ boxShadow: CORE_HIGHLIGHT }}>
+              <PeekBody signals={signals} thread={thread} onClose={onClose} onSeeThread={onSeeThread} />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -106,9 +127,9 @@ function KindDots({ kinds }: { kinds: SignalKind[] }) {
             initial={{ scale: 0.4, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.24, ease: EASE }}
-            className="flex size-7 items-center justify-center rounded-full bg-crumb-tint text-crumb-deep"
+            className="flex"
           >
-            <SignalIcon kind={k} />
+            <KindBadge kind={k} size={26} />
           </motion.span>
         ))}
       </AnimatePresence>
@@ -134,73 +155,78 @@ function PeekBody({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1, transition: { delay: 0.12, duration: 0.2 } }}
-      className="p-4 pt-2.5"
+      className="p-3 pt-2"
     >
-      <div className="mx-auto mb-2.5 h-1 w-9 rounded-full bg-black/15" aria-hidden />
+      <div className="mx-auto mb-2 h-1 w-9 rounded-full bg-crumb-hairline-strong" aria-hidden />
 
-      <div className="mb-3 flex items-center gap-2">
-        <CrumbGlyph size={16} />
-        <span className="text-[13px] font-semibold tracking-tight">
+      <div className="mb-2.5 flex items-center gap-2 px-1">
+        <CrumbGlyph size={15} />
+        <span className="text-[13px] font-medium">
           {signals.length} {signals.length === 1 ? "signal" : "signals"} found on this reel
         </span>
         <button
           type="button"
           onClick={onClose}
-          className="ml-auto flex size-7 items-center justify-center rounded-full text-crumb-muted active:bg-black/5"
+          className="-my-2 -mr-2 ml-auto flex size-11 items-center justify-center rounded-full text-crumb-muted active:bg-crumb-hairline"
           aria-label="Close"
         >
-          <X size={16} strokeWidth={2.2} />
+          <X size={16} strokeWidth={1.75} />
         </button>
       </div>
 
-      <ul className="flex flex-col gap-2.5">
+      {/* The three trust signals, kept separate: never one score */}
+      <ul className="divide-y divide-black/[0.06] rounded-2xl bg-crumb-card ring-1 ring-black/[0.06]">
         {lines.map((l) => (
-          <li key={l.key} className="flex items-start gap-3">
+          <li key={l.key} className="flex items-start gap-3 px-3 py-2.5">
             <span
-              className={
-                "mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full " +
-                (l.key === "community" ? "bg-black/[0.06] text-crumb-ink" : "bg-crumb-tint text-crumb-deep")
-              }
+              className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full text-crumb-ink"
+              style={{ background: TRUST_TINT[l.key] }}
             >
-              <TrustIcon name={l.key} />
+              <TrustIcon name={l.key} size={14} />
             </span>
             <span className="min-w-0">
-              <span className="block text-[11px] font-medium text-crumb-muted">{l.title}</span>
-              <span className="block text-[14px] leading-[1.25] font-medium tracking-tight">{l.line}</span>
+              <span className="block text-[12px] text-crumb-muted">{l.title}</span>
+              <span className="block text-[14px] leading-[1.35] text-crumb-ink">{l.line}</span>
             </span>
           </li>
         ))}
       </ul>
 
       {friends.length > 0 && (
-        <div className="mt-3.5 flex items-center gap-2.5 rounded-2xl bg-white px-3 py-2.5">
-          <span className="flex -space-x-2">
+        <div className="mt-2 flex items-center gap-2.5 rounded-2xl bg-crumb-card px-3 py-2.5 ring-1 ring-black/[0.06]">
+          <span className="flex -space-x-1.5">
             {friends.slice(0, 3).map((name, i) => (
               <span
                 key={name}
-                className="flex size-6 items-center justify-center rounded-full text-[10px] font-semibold text-white ring-2 ring-white"
+                className="flex size-6 items-center justify-center rounded-full text-[10px] font-semibold text-crumb-ink ring-2 ring-crumb-card"
                 style={{ background: FRIEND_COLOURS[i % FRIEND_COLOURS.length] }}
               >
                 {name[0]}
               </span>
             ))}
           </span>
-          <span className="text-[13px] font-medium leading-tight tracking-tight">
-            {friends.length} {friends.length === 1 ? "person" : "people"} you know reviewed this
+          <span className="text-[13px] leading-tight text-crumb-body">
+            <span className="font-medium text-crumb-ink">
+              {friends.length} {friends.length === 1 ? "person" : "people"} you know
+            </span>{" "}
+            reviewed this
           </span>
         </div>
       )}
 
+      {/* Pill CTA with its arrow nested in its own circle ("button in button") */}
       <button
         type="button"
         onClick={onSeeThread}
-        className="mt-3 flex h-11 w-full items-center justify-center gap-1.5 rounded-full bg-crumb-ink text-[14px] font-semibold text-white active:opacity-85"
+        className="group mt-3 flex h-12 w-full items-center justify-between rounded-full bg-crumb-accent pr-1.5 pl-5 text-[14px] font-medium text-white transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] active:bg-crumb-accent-active"
       >
         {thread ? "See the thread" : "Start a thread"}
-        <ArrowUpRight size={16} strokeWidth={2.4} />
+        <span className="flex size-9 items-center justify-center rounded-full bg-white/15 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:translate-x-0.5 group-hover:-translate-y-px group-hover:scale-105">
+          <ArrowUpRight size={16} strokeWidth={1.75} />
+        </span>
       </button>
     </motion.div>
   );
 }
 
-const FRIEND_COLOURS = ["#5B7CFA", "#E0884A", "#3FA37A"];
+const FRIEND_COLOURS = ["var(--sig-mint)", "var(--sig-blue)", "var(--sig-peach)"];

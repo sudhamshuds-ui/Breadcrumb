@@ -8,21 +8,23 @@ import {
   useMotionValue,
   useReducedMotion,
 } from "motion/react";
-import { ArrowUpRight, Pause, Play, Power } from "lucide-react";
+import { ArrowUpRight, ChevronsRight, Pause, Play, Power } from "lucide-react";
 import type { CrumbStatus } from "@/lib/crumb-machine";
 import { CrumbGlyph } from "./CrumbGlyph";
+import { CrumbGlow } from "./CrumbGlow";
 
 const SIZE = 60;
 const MARGIN = 14;
 const SLIVER = 12; // how much of the handle shows when tucked
 const TUCK_X = SIZE + MARGIN - SLIVER;
-const MENU_WIDTH = 236;
+const MENU_WIDTH = 288;
 const SPRING = { type: "spring", stiffness: 420, damping: 34 } as const;
 
 interface Props {
   status: CrumbStatus;
   revealed: boolean;
   menuOpen: boolean;
+  foundCount: number;
   top: number;
   onReveal: () => void;
   onTuck: () => void;
@@ -51,8 +53,8 @@ export function CrumbHandle(props: Props) {
         <motion.div
           key="crumb-handle"
           data-interactive
-          className="absolute z-30"
-          style={{ x, right: MARGIN, top, width: SIZE, height: SIZE }}
+          className="absolute z-30 rounded-full"
+          style={{ x, right: MARGIN, top, width: SIZE, height: SIZE, outlineOffset: 4 }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, transition: { duration: 0.2 } }}
@@ -70,55 +72,47 @@ export function CrumbHandle(props: Props) {
             if (!open && revealed) props.onTuck();
           }}
           onTap={() => (revealed ? props.onToggleMenu() : props.onReveal())}
+          whileTap={menuOpen ? undefined : { scale: 0.94 }}
+          // Keyboard and single-tap alternative to the drag gesture
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key !== "Enter" && e.key !== " ") return;
+            e.preventDefault();
+            if (revealed) props.onToggleMenu();
+            else props.onReveal();
+          }}
           aria-label={revealed ? "Crumb options" : "Pull out Crumb"}
+          aria-expanded={revealed ? menuOpen : undefined}
           role="button"
         >
-          {/* Glow behind the widget: soft shimmer while scanning, steady when signals are found */}
-          <motion.div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-full bg-crumb-glow"
-            style={{ filter: "blur(16px)" }}
-            initial={false}
-            animate={
-              glowing
-                ? { opacity: 0.85, scale: 1.18 }
-                : scanning && !reduce
-                  ? { opacity: [0.15, 0.55, 0.15], scale: [1, 1.12, 1] }
-                  : { opacity: scanning ? 0.35 : 0, scale: 1 }
-            }
-            transition={
-              scanning && !reduce
-                ? { duration: 1.8, repeat: Infinity, ease: "easeInOut" }
-                : { duration: 0.3 }
-            }
-          />
+          <CrumbGlow phase={glowing ? "found" : scanning ? "scanning" : "idle"} foundCount={props.foundCount} />
 
           {/* Toggle pill: grows left out of the widget */}
           <motion.div
-            className="absolute right-0 top-0 h-full overflow-hidden rounded-full bg-crumb-surface"
+            className="absolute right-0 top-0 h-full overflow-hidden rounded-full bg-crumb-surface ring-1 ring-black/10"
             initial={false}
             animate={{ width: menuOpen ? MENU_WIDTH : SIZE }}
             transition={reduce ? { duration: 0.15 } : SPRING}
-            style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.28)" }}
           >
             <AnimatePresence>
               {menuOpen && (
                 <motion.div
-                  className="absolute left-0 top-0 flex h-full items-center gap-1 pl-3"
+                  className="absolute left-0 top-0 flex h-full items-stretch pl-2"
                   initial={{ opacity: 0, x: 8 }}
-                  animate={{ opacity: 1, x: 0, transition: { delay: 0.08, duration: 0.18 } }}
+                  animate={{ opacity: 1, x: 0, transition: { delay: 0.08, duration: 0.3, ease: [0.32, 0.72, 0, 1] } }}
                   exit={{ opacity: 0, transition: { duration: 0.1 } }}
                 >
+                  <MenuItem label="Hide" onSelect={props.onTuck} icon={<ChevronsRight size={18} strokeWidth={1.75} />} />
                   <MenuItem
                     label={paused ? "Resume" : "Pause"}
                     onSelect={props.onPauseToggle}
-                    icon={paused ? <Play size={18} strokeWidth={2.2} /> : <Pause size={18} strokeWidth={2.2} />}
+                    icon={paused ? <Play size={18} strokeWidth={1.75} /> : <Pause size={18} strokeWidth={1.75} />}
                   />
-                  <MenuItem label="Turn off" onSelect={props.onTurnOff} icon={<Power size={18} strokeWidth={2.2} />} />
+                  <MenuItem label="Turn off" onSelect={props.onTurnOff} icon={<Power size={18} strokeWidth={1.75} />} />
                   <MenuItem
                     label="Breadcrumb"
                     onSelect={props.onOpenBreadcrumb}
-                    icon={<ArrowUpRight size={18} strokeWidth={2.2} />}
+                    icon={<ArrowUpRight size={18} strokeWidth={1.75} />}
                   />
                 </motion.div>
               )}
@@ -127,11 +121,8 @@ export function CrumbHandle(props: Props) {
 
           {/* The widget itself */}
           <div
-            className="absolute inset-0 flex items-center justify-center rounded-full bg-crumb-surface"
-            style={{
-              boxShadow: glowing ? "0 0 0 1px rgba(255,84,84,0.35)" : "0 6px 18px rgba(0,0,0,0.25)",
-              opacity: paused ? 0.7 : 1,
-            }}
+            className="absolute inset-0 flex items-center justify-center rounded-full bg-crumb-surface ring-1 ring-black/10"
+            style={{ opacity: paused ? 0.7 : 1 }}
           >
             <CrumbGlyph size={28} />
             {paused && (
@@ -155,10 +146,10 @@ function MenuItem({ label, icon, onSelect }: { label: string; icon: React.ReactN
         e.stopPropagation();
         onSelect();
       }}
-      className="flex w-[52px] flex-col items-center gap-1 rounded-2xl py-1 text-crumb-ink active:bg-black/5"
+      className="crumb-type flex w-[54px] flex-col items-center justify-center gap-1 rounded-full text-crumb-ink active:bg-crumb-hairline"
     >
       {icon}
-      <span className="text-[10px] font-medium leading-none tracking-tight">{label}</span>
+      <span className="text-[10px] font-medium leading-none">{label}</span>
     </button>
   );
 }

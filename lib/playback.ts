@@ -117,20 +117,28 @@ export function peekLines(signals: Signal[], thread: Thread | undefined): PeekLi
   }
 
   const evidenceByState: Record<string, string> = {
-    supported: "Linked sources support the claim",
+    supported: "Linked sources support them",
     mixed: "Linked sources are mixed on this",
-    not_supported: "Linked sources don't back the claims",
+    not_supported: "Linked sources don't support them yet",
     unknown: "No sources linked yet",
   };
+  const evidenceAlone: Record<string, string> = {
+    ...evidenceByState,
+    supported: "Linked sources support the claims",
+    not_supported: "Linked sources don't support the claims",
+  };
   const claimCount = claims.length === 1 ? "1 claim" : `${claims.length} claims`;
+  // With claims, the sentence refers back to them ("2 claims. Linked sources
+  // don't support them yet"); without, it stands alone.
+  const evidenceState = thread?.trust.evidence ?? "unknown";
   const evidenceLine =
     claims.length > 0
-      ? `${claimCount}. ${evidenceByState[thread?.trust.evidence ?? "unknown"]}`
-      : evidenceByState[thread?.trust.evidence ?? "unknown"];
+      ? `${claimCount}. ${evidenceByState[evidenceState]}`
+      : evidenceAlone[evidenceState];
 
   const c = thread?.trust.community;
   const communityLine = c
-    ? `${c.reviews} reviews · ${c.positive} found it useful`
+    ? `${c.reviews} reviews, ${c.positive} positive`
     : "No reviews yet";
 
   return [

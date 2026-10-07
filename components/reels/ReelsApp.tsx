@@ -367,12 +367,14 @@ export function ReelsApp() {
             data-interactive
             onClick={() => setMuted((m) => !m)}
             aria-label={muted ? "Turn sound on" : "Turn sound off"}
-            className="absolute right-4 top-[104px] z-20 flex size-8 items-center justify-center rounded-full bg-black/40 text-white"
+            className="absolute right-2 top-[98px] z-20 flex size-11 items-center justify-center text-white"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            <span className="flex size-8 items-center justify-center rounded-full bg-black/40">
+              {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+            </span>
           </motion.button>
         )}
       </AnimatePresence>
@@ -422,6 +424,7 @@ export function ReelsApp() {
           status={crumb.status}
           revealed={crumb.revealed}
           menuOpen={crumb.menuOpen}
+          foundCount={crumb.found.length}
           top={HANDLE_TOP}
           onReveal={() => dispatch({ type: "REVEAL" })}
           onTuck={() => dispatch({ type: "TUCK" })}
@@ -449,7 +452,7 @@ export function ReelsApp() {
           <motion.div
             key={toast}
             data-interactive
-            className="absolute inset-x-3.5 z-40 flex h-12 items-center justify-between rounded-2xl bg-crumb-surface pl-4 pr-1.5 text-crumb-ink shadow-xl"
+            className="crumb-type absolute inset-x-3.5 z-40 flex h-12 items-center justify-between rounded-full border border-crumb-hairline-strong bg-crumb-surface pl-5 pr-1.5 text-crumb-ink"
             style={{ bottom: CHIP_BOTTOM }}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -461,7 +464,7 @@ export function ReelsApp() {
             </span>
             <button
               type="button"
-              className="h-9 rounded-xl px-3 text-[14px] font-semibold active:bg-black/5"
+              className="h-9 rounded-full px-3.5 text-[14px] font-medium text-crumb-accent active:bg-crumb-hairline"
               onClick={() => {
                 dispatch({ type: toast === "off" ? "TURN_ON" : "RESUME" });
                 setToast(null);
