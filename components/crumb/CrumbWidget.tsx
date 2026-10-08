@@ -42,6 +42,7 @@ interface Props {
   announcing: Signal | null;
   aside?: Reel["aside"] | null; // a just-for-fun chip, not a flag
   found: Signal[];
+  shown?: number; // flags already announced (the badge); defaults to all found
   reel: Reel;
   thread: Thread | undefined;
   bottom: number;
@@ -121,9 +122,9 @@ export function CrumbWidget(props: Props) {
               key="widget"
               layoutId={layoutId}
               glowMode={off ? "none" : glowMode}
-              glowKey={found.length}
+              glowKey={props.shown ?? found.length}
               tone={tone}
-              badge={status === "signals" && !chip ? { count: found.length, ...BADGE[flagTone] } : null}
+              badge={status === "signals" && !chip && (props.shown ?? found.length) > 0 ? { count: props.shown ?? found.length, ...BADGE[flagTone] } : null}
               chip={chip}
               iconStyle={iconStyle}
               disabled={off || hidden}
@@ -234,7 +235,10 @@ function Widget({
           const timer = setTimeout(() => {
             held.current = true;
             press.current = null;
-            progress.set(0);
+            // Stop the fill first: if its last frame lands after the reset,
+            // the ring stays drawn around the widget when Crumb comes back.
+            anim.stop();
+            progress.jump(0);
             onHold();
             // Phones don't always send a click after a long press; never let a
             // stale flag swallow the next real tap.

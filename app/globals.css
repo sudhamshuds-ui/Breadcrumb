@@ -261,16 +261,27 @@ body {
   border-radius: 50%;
   background: linear-gradient(135deg, var(--g1) 0%, var(--g2) 50%, var(--g3) 100%);
 }
-/* wide soft wash: the "Ellipse 9" layer */
-.crumb-glow .o1 .blob { inset: -2.5px; transform: translate(-1.25px, -1px); filter: blur(3px); opacity: 0.9; }
-/* faint counter-light: "Ellipse 10" at 20% */
-.crumb-glow .o2 .blob { inset: -2px; transform: translate(1.25px, 1.25px); filter: blur(2px); opacity: 0.4; }
-/* bright tight rim: "Ellipse 11" */
+/* Soft halo ("Ellipse 9"): supports the rim, never covers it */
+.crumb-glow .o1 .blob { inset: -3px; transform: translate(-1.6px, -1px); filter: blur(4.5px); opacity: 0.5; }
+/* faint counter-light ("Ellipse 10" at 20%) */
+.crumb-glow .o2 .blob { inset: -2.5px; transform: translate(1.25px, 1.25px); filter: blur(2.5px); opacity: 0.3; }
+/* The rim ("Ellipse 11", blur 2.9 at 466px): a slightly larger disc offset up
+   and left, edge almost sharp. Bright highlight on the lit side, through the
+   main colour, into the deep tone that fades into the background. */
 .crumb-glow .o3 .blob {
-  inset: -1.25px;
-  transform: translate(-0.8px, 0.6px);
-  filter: blur(0.7px);
-  background: linear-gradient(135deg, var(--g4) 0%, var(--g2) 55%, var(--g3) 100%);
+  /* offset nearly equals the overhang: a crescent, ~2.5px on the lit side,
+     thinning to nothing on the far side */
+  inset: -1.35px;
+  transform: translate(-1.2px, -0.7px);
+  filter: blur(0.35px);
+  background: linear-gradient(
+    140deg,
+    var(--g4) 0%,
+    var(--g1) 22%,
+    var(--g2) 55%,
+    var(--g3) 82%,
+    color-mix(in srgb, var(--g3) 40%, transparent) 100%
+  );
 }
 .crumb-glow .ring {
   position: absolute;

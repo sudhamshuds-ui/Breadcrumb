@@ -12,6 +12,8 @@ interface Props {
   startAt: number; // where the first reel starts (coming back from a thread)
   register: (id: string, el: HTMLVideoElement | null) => void;
   onAutoMuted: () => void; // the phone refused to play with sound
+  loop: boolean; // only the last reel loops; the others move on when they end
+  onEnded: (id: string) => void;
 }
 
 // One reel's video. Only the reel on screen plays; the others sit paused on
@@ -25,6 +27,8 @@ export const ReelVideo = memo(function ReelVideo({
   startAt,
   register,
   onAutoMuted,
+  loop,
+  onEnded,
 }: Props) {
   const ref = useRef<HTMLVideoElement>(null);
   const started = useRef(false);
@@ -71,7 +75,12 @@ export const ReelVideo = memo(function ReelVideo({
     }
     if (!started.current) {
       started.current = true;
-      if (startAt > 0) v.currentTime = startAt;
+      // Coming back from a thread: resume at the same moment. Setting the time
+      // before the video knows its length is ignored, so wait for that.
+      if (startAt > 0) {
+        if (v.readyState >= 1) v.currentTime = startAt;
+        else v.addEventListener("loadedmetadata", () => (v.currentTime = startAt), { once: true });
+      }
     }
     v.play().catch(() => {
       // iPhones only allow sound after a tap on this video; fall back to muted.
@@ -102,7 +111,10 @@ export const ReelVideo = memo(function ReelVideo({
         className="absolute inset-0 h-full w-full bg-transparent object-cover"
         muted
         playsInline
-        loop
+        loop={loop}
+        onEnded={() => {
+          if (active) onEnded(reel.id);
+        }}
         preload={preload ? "auto" : "metadata"}
         disablePictureInPicture
         aria-label={`Reel by ${reel.creator.handle}`}

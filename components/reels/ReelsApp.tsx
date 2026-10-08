@@ -7,7 +7,7 @@ import { Heart, Play, Volume2, VolumeX } from "lucide-react";
 import { reels } from "@/lib/data/reels";
 import type { Reel } from "@/lib/types";
 import { getThread } from "@/lib/data/threads";
-import { ANNOUNCE_MS, crumbReducer, initialCrumbState, isListening } from "@/lib/crumb-machine";
+import { ANNOUNCE_MS, REST_MS, crumbReducer, initialCrumbState, isListening, shownCount } from "@/lib/crumb-machine";
 import { dueSignals, foundSignals } from "@/lib/playback";
 import { useReelClock } from "@/lib/use-reel-clock";
 import { readStore, writeStore } from "@/lib/storage";
@@ -47,7 +47,13 @@ export function ReelsApp() {
   const startTime = Number(params.get("t")) || 0;
 
   const [index, setIndex] = useState(startIndex);
-  const [crumb, dispatch] = useReducer(crumbReducer, undefined, () => initialCrumbState(true));
+  // Opened mid-reel (back from a thread): start already caught up, so what was
+  // said before this moment is never re-announced, not even for a frame.
+  const [crumb, dispatch] = useReducer(crumbReducer, undefined, () => {
+    const start = reels[startIndex];
+    const said = startTime > 0 ? dueSignals(start.signals, startTime).map((s) => s.id) : [];
+    return crumbReducer(initialCrumbState(true), { type: "CATCH_UP", alreadySaid: said });
+  });
   const [muted, setMuted] = useState(true); // until the first tap; see soundChosen
   const [paused, setPaused] = useState(false);
   const [holding, setHolding] = useState(false);
@@ -142,10 +148,16 @@ export function ReelsApp() {
   }, [crumb.status]);
 
   // ---- reel change: reset playback and Crumb -------------------------------
-  const firstEnter = useRef(true);
+  // Rewind only when the reel actually changes (not on first load, where a
+  // "come back to this moment" start time applies, and not when React re-runs
+  // the effect in development).
+  const lastIndex = useRef<number | null>(null);
   useEffect(() => {
-    if (firstEnter.current) firstEnter.current = false;
-    else seek(0);
+    if (lastIndex.current === index) return;
+    const first = lastIndex.current === null;
+    lastIndex.current = index;
+    if (first) return; // the initial state already fits the first reel
+    seek(0);
     dispatch({ type: "REEL_ENTER" });
   }, [index, seek]);
 
@@ -159,10 +171,10 @@ export function ReelsApp() {
   }, [index]);
   useEffect(() => {
     const a = reel.aside;
-    if (!a || asideShown.current || t < a.at || crumb.status === "off" || crumb.open || crumb.announcing) return;
+    if (!a || asideShown.current || t < a.at || crumb.status === "off" || crumb.open || crumb.announcing || crumb.resting) return;
     asideShown.current = true;
     setAside(a);
-  }, [t, reel.aside, crumb.status, crumb.open, crumb.announcing]);
+  }, [t, reel.aside, crumb.status, crumb.open, crumb.announcing, crumb.resting]);
   useEffect(() => {
     if (!aside) return;
     const timer = setTimeout(() => setAside(null), aside.holdMs ?? ANNOUNCE_MS);
@@ -176,6 +188,13 @@ export function ReelsApp() {
     const timer = setTimeout(() => dispatch({ type: "ANNOUNCE_DONE", id }), ANNOUNCE_MS);
     return () => clearTimeout(timer);
   }, [crumb.announcing]);
+
+  // ...then rests as a plain widget before the next queued flag gets its turn.
+  useEffect(() => {
+    if (!crumb.resting) return;
+    const timer = setTimeout(() => dispatch({ type: "REST_DONE" }), REST_MS);
+    return () => clearTimeout(timer);
+  }, [crumb.resting]);
 
   // ---- playback → Crumb: signals become due as the reel plays -------------
   useEffect(() => {
@@ -391,6 +410,28 @@ export function ReelsApp() {
     return () => window.removeEventListener("keydown", onKey);
   }, [blocked, scrollToIndex]);
 
+  // ---- a reel ends: move on to the next one, like the real app -------------
+  // If a sheet or the peek card is open, play it again instead of moving the
+  // feed out from under the tester.
+  const blockedRef = useRef(blocked);
+  blockedRef.current = blocked;
+  const onReelEnded = useCallback(
+    (id: string) => {
+      const i = reels.findIndex((r) => r.id === id);
+      if (i !== indexRef.current) return;
+      if (blockedRef.current) {
+        const v = videos.current.get(id);
+        if (v) {
+          v.currentTime = 0;
+          v.play().catch(() => {});
+        }
+        return;
+      }
+      scrollToIndex(i + 1);
+    },
+    [scrollToIndex],
+  );
+
   // ---- navigation to the Breadcrumb thread --------------------------------
   const openThread = () => {
     const at = t.toFixed(1);
@@ -469,6 +510,8 @@ export function ReelsApp() {
                     startAt={i === startIndex ? startTime : 0}
                     register={registerVideo}
                     onAutoMuted={onAutoMuted}
+                    loop={i === reels.length - 1}
+                    onEnded={onReelEnded}
                   />
                   <motion.div
                     className="absolute inset-0"
@@ -614,6 +657,7 @@ export function ReelsApp() {
         announcing={announcing}
         aside={crumb.status === "off" || crumb.open ? null : aside}
         found={found}
+        shown={shownCount(crumb)}
         reel={reel}
         thread={thread}
         bottom={WIDGET_BOTTOM}
