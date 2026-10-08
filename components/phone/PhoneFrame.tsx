@@ -17,37 +17,10 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("resize", fit);
   }, []);
 
-  // Home-screen app on iPhone: iOS sometimes opens the app in a window that is
-  // short by the status bar's height (a black strip under the nav) until the
-  // page is pulled down. Do that tiny pull-down ourselves on open.
-  useEffect(() => {
-    const nav = window.navigator as Navigator & { standalone?: boolean };
-    if (nav.standalone !== true) return;
-    const root = document.documentElement;
-    const nudge = () => {
-      root.style.minHeight = "calc(100% + 1px)"; // give the page 1px to scroll
-      window.scrollTo(0, 1);
-      requestAnimationFrame(() => {
-        window.scrollTo(0, 0);
-        setTimeout(() => (root.style.minHeight = ""), 300);
-      });
-    };
-    // iOS ignores it if it runs too early, so retry after load and on the
-    // first touch; once the window is full height there's nothing left to do.
-    const fixed = () => window.innerHeight >= Math.max(screen.width, screen.height) - 1;
-    const tryNudge = () => {
-      const portrait = window.innerHeight >= window.innerWidth;
-      if (portrait && !fixed()) nudge();
-    };
-    const timers = [300, 800, 1600].map((ms) => setTimeout(tryNudge, ms));
-    window.addEventListener("load", tryNudge);
-    window.addEventListener("touchstart", tryNudge, { passive: true });
-    return () => {
-      timers.forEach(clearTimeout);
-      window.removeEventListener("load", tryNudge);
-      window.removeEventListener("touchstart", tryNudge);
-    };
-  }, []);
+  // There used to be a "nudge" here for the home-screen black strip (scroll
+  // the page 1px on every touch). It never fixed the strip, and on iPhone a
+  // scroll during a touch cancels the tap, so buttons like Crumb's widget
+  // stopped responding. Removed on purpose; see CLAUDE.md.
 
   return (
     <div className="flex min-h-dvh w-full items-center justify-center bg-[#2a2a2a] max-[499px]:bg-black">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useReducer, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion, useTransform } from "motion/react";
 import { Heart, Play, RotateCw, Volume2, VolumeX } from "lucide-react";
@@ -76,6 +76,9 @@ export function ReelsApp() {
   const [shareOpen, setShareOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null); // "Sent to Jess", "Link copied"
   const [frameH, setFrameH] = useState(844);
+  // The widget-to-card morph is matched by id across the whole page; a fresh
+  // id per visit means nothing left over from before a thread can attach.
+  const morphId = useId();
   const [tutorial, tutorialDispatch] = useReducer(tutorialReducer, "finished" as TutorialStep);
 
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -781,6 +784,7 @@ export function ReelsApp() {
           setToast(null);
         }}
         onSeeThread={openThread}
+        morphId={morphId}
       />
 
       <TutorialOverlay

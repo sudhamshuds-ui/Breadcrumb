@@ -306,7 +306,7 @@ The user works on both a Windows PC (`D:\projects\Breadcrumb`) and a Mac (cloned
 
 ### Open issues
 
-- **Home-screen mode on iPhone**: iOS opens the app in a window short by the status bar height (black strip under the nav) until the page is pulled down once. An automatic retry nudge is in `PhoneFrame.tsx` but doesn't fix it. Workaround for testing: open in Safari, or pull down once per session.
+- **Home-screen mode on iPhone**: iOS opens the app in a window short by the status bar height (black strip under the nav) until the page is pulled down once. An automatic "nudge" (scroll the page 1 px on every touch) never fixed it and was removed on 2026-10-09: on iPhone a scroll during a touch cancels the tap, which made the Crumb widget untappable (especially after coming back from a thread). Never scroll the page from a touch handler. Workaround for testing: open in Safari, or pull down once per session.
 - **Wrong URLs show a 404** (`/Reels`, `/reel`). A forgiving redirect to `/reels` has been offered but not built.
 - **Home-screen icon** is generic.
 - **The user is redesigning the widget** (states, glow, peek card, interaction) and will share it next. Keep everything in `lib/` stable.
