@@ -10,7 +10,9 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Crumb",
     description: "Wizard of Oz prototype of Crumb, an overlay that surfaces money and health-claim signals on reels.",
     id: "/",
-    start_url: "/reels",
+    // No start_url on purpose: the icon opens the page it was added from, so
+    // an icon added on /onboarding starts with the tutorial and one added on
+    // /reels doesn't.
     scope: "/",
     display: "standalone",
     background_color: "#000000",
