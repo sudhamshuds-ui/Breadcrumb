@@ -46,7 +46,7 @@ export function ReelsApp() {
 
   const [index, setIndex] = useState(startIndex);
   const [crumb, dispatch] = useReducer(crumbReducer, undefined, () => initialCrumbState(true));
-  const [muted, setMuted] = useState(false); // sound on by default
+  const [muted, setMuted] = useState(true); // until the first tap; see soundChosen
   const [paused, setPaused] = useState(false);
   const [holding, setHolding] = useState(false);
   const [captionOpen, setCaptionOpen] = useState(false);
@@ -70,17 +70,17 @@ export function ReelsApp() {
     else videos.current.delete(id);
   }, []);
   const getActiveVideo = useCallback(() => videos.current.get(reels[indexRef.current].id) ?? null, []);
-  // The phone blocked sound before any tap: play muted, then switch sound on
-  // at the first tap (unless the tester muted it themselves).
-  const autoMuted = useRef(false);
-  const onAutoMuted = useCallback(() => {
-    autoMuted.current = true;
-    setMuted(true);
-  }, []);
+  // Sound: iPhones only allow it after a tap, so reels start muted (which always
+  // autoplays) and the first tap anywhere switches sound on instead of pausing.
+  // `soundChosen` is set once that happens or the tester uses the sound button.
+  const soundChosen = useRef(false);
+  const unmuteOnClick = useRef(false);
+  const onAutoMuted = useCallback(() => setMuted(true), []);
   useEffect(() => {
+    // The unmute itself must run in the "click" the phone treats as the tap.
     const unlock = () => {
-      if (!autoMuted.current) return;
-      autoMuted.current = false;
+      if (!unmuteOnClick.current) return;
+      unmuteOnClick.current = false;
       const v = getActiveVideo();
       if (v) {
         v.muted = false;
@@ -89,11 +89,7 @@ export function ReelsApp() {
       setMuted(false);
     };
     window.addEventListener("click", unlock);
-    window.addEventListener("touchend", unlock);
-    return () => {
-      window.removeEventListener("click", unlock);
-      window.removeEventListener("touchend", unlock);
-    };
+    return () => window.removeEventListener("click", unlock);
   }, [getActiveVideo]);
   const playing = !holding && !paused;
 
@@ -321,6 +317,12 @@ export function ReelsApp() {
         setTimeout(() => setBursts((b) => b.filter((x) => x.id !== burst.id)), 900);
       } else {
         lastTap.current = now;
+        if (!soundChosen.current) {
+          // First tap: sound on, keep playing.
+          soundChosen.current = true;
+          unmuteOnClick.current = true;
+          return;
+        }
         singleTapTimer.current = setTimeout(() => setPaused((p) => !p), 280);
       }
     };
@@ -490,7 +492,7 @@ export function ReelsApp() {
             onClick={() => {
               // Set it on the video right away: iPhones only allow sound when
               // it's switched on during the tap itself.
-              autoMuted.current = false; // the tester chose, so don't override it
+              soundChosen.current = true; // the tester chose, so don't override it
               const v = getActiveVideo();
               if (v) v.muted = !muted;
               setMuted(!muted);
