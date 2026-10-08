@@ -175,12 +175,14 @@
   -webkit-touch-callout: none; /* no iOS long-press menu while holding to pause */
   scrollbar-width: none;
   --top-inset: 52px; /* top bar sits under the fake status bar in the desktop frame */
+  --bottom-inset: 22px; /* nav floats just above the fake home indicator */
 }
 
 /* On a real phone: the device's own status bar and notch set the top inset */
 @media (max-width: 499px) {
   .phone-ui {
     --top-inset: max(8px, env(safe-area-inset-top));
+    --bottom-inset: max(10px, calc(env(safe-area-inset-bottom) - 6px));
   }
 }
 

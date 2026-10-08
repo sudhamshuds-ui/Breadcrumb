@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion, type MotionValue } from "motion/react";
 import { ArrowUpRight, X } from "lucide-react";
 import type { Signal, SignalKind, Thread } from "@/lib/types";
 import { chipSummary, kindsInOrder, peekLines } from "@/lib/playback";
@@ -17,6 +17,7 @@ interface Props {
   signals: Signal[];
   thread: Thread | undefined;
   bottom: number;
+  followY: MotionValue<number>;
   onOpen: () => void;
   onClose: () => void;
   onSeeThread: () => void;
@@ -30,7 +31,7 @@ const EASE = [0.32, 0.72, 0, 1] as const;
 const SHELL = "crumb-glass bg-white/10 ring-1 ring-white/20 backdrop-blur-xl";
 const CORE_HIGHLIGHT = "inset 0 1px 1px rgba(255,255,255,0.7)";
 
-export function CrumbCallout({ mode, signals, thread, bottom, onOpen, onClose, onSeeThread }: Props) {
+export function CrumbCallout({ mode, signals, thread, bottom, followY, onOpen, onClose, onSeeThread }: Props) {
   const reduce = useReducedMotion();
   const layoutId = reduce ? undefined : "crumb-callout";
 
@@ -57,8 +58,10 @@ export function CrumbCallout({ mode, signals, thread, bottom, onOpen, onClose, o
         )}
       </AnimatePresence>
 
-      <AnimatePresence initial={false}>
-        {mode === "chip" && (
+      {/* Zero-height box on the bottom edge: moves the chip with the swipe */}
+      <motion.div className="absolute inset-x-0 bottom-0 z-30 h-0" style={{ y: followY }}>
+        <AnimatePresence initial={false}>
+          {mode === "chip" && (
           <motion.button
             key="chip"
             type="button"
@@ -85,7 +88,10 @@ export function CrumbCallout({ mode, signals, thread, bottom, onOpen, onClose, o
             </span>
           </motion.button>
         )}
+        </AnimatePresence>
+      </motion.div>
 
+      <AnimatePresence initial={false}>
         {mode === "peek" && (
           <motion.div
             key="peek"

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AnimatePresence, motion, useReducedMotion, useTransform } from "motion/react";
+import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { Heart, Play, Volume2, VolumeX } from "lucide-react";
 import { reels } from "@/lib/data/reels";
 import { getThread } from "@/lib/data/threads";
@@ -15,10 +15,10 @@ import { CrumbCallout } from "@/components/crumb/CrumbCallout";
 import { ReelScene } from "./ReelScene";
 import { ReelChrome } from "./ReelChrome";
 import { CaptionSheet } from "./CaptionSheet";
-import { BottomNav, StatusBar, TopBar } from "./PhoneChrome";
+import { BottomNav, HomeIndicator, StatusBar, TopBar } from "./PhoneChrome";
 
-const NAV_H = 84; // black band holding the bottom nav
-const CHROME_BOTTOM = 0; // chrome sits just above the nav band, inside the video
+const NAV_H = 84; // space the floating glass nav takes at the bottom of the video
+const CHROME_BOTTOM = NAV_H; // creator row and action rail sit just above the nav
 const CHIP_BOTTOM = NAV_H + 104; // above the creator row and caption
 const HANDLE_TOP = 268;
 const SHEET_TOP_RATIO = 0.4;
@@ -44,7 +44,6 @@ export function ReelsApp() {
   const [muted, setMuted] = useState(true);
   const [paused, setPaused] = useState(false);
   const [holding, setHolding] = useState(false);
-  const [swiping, setSwiping] = useState(false);
   const [captionOpen, setCaptionOpen] = useState(false);
   const [liked, setLiked] = useState<Record<string, boolean>>({});
   const [bursts, setBursts] = useState<Burst[]>([]);
@@ -54,7 +53,7 @@ export function ReelsApp() {
   const viewportRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const indexRef = useRef(startIndex);
-  const pageH = frameH - NAV_H; // one reel = the video area above the nav
+  const pageH = frameH; // one reel = the full screen; the nav floats on top
   const reel = reels[index];
   const thread = getThread(reel.threadId);
   const found = foundSignals(reel, crumb.found);
@@ -77,6 +76,9 @@ export function ReelsApp() {
     if (el) el.scrollTop = indexRef.current * pageH;
   }, [pageH]);
 
+  // The chip rides along with its reel while swiping instead of fading out.
+  const chipY = useMotionValue(0);
+
   // ---- persistence: remember if Crumb was turned off ----------------------
   useEffect(() => {
     if (readStore<boolean>(ENABLED_KEY, true) === false) dispatch({ type: "TURN_OFF" });
@@ -92,7 +94,10 @@ export function ReelsApp() {
     if (firstEnter.current) firstEnter.current = false;
     else seek(0);
     dispatch({ type: "REEL_ENTER" });
-  }, [index, seek]);
+    // The old chip has slid off-screen with its reel; bring the slot back once it's gone.
+    const id = setTimeout(() => chipY.set(0), 250);
+    return () => clearTimeout(id);
+  }, [index, seek, chipY]);
 
   // ---- playback → Crumb: signals become due as the reel plays -------------
   useEffect(() => {
@@ -146,7 +151,6 @@ export function ReelsApp() {
       return;
     }
     swipingRef.current = false;
-    setSwiping(false);
     if (next !== indexRef.current) {
       indexRef.current = next;
       setIndex(next);
@@ -160,10 +164,9 @@ export function ReelsApp() {
   };
 
   const onScroll = () => {
-    if (!swipingRef.current) {
-      swipingRef.current = true;
-      setSwiping(true);
-    }
+    swipingRef.current = true;
+    const el = scrollerRef.current;
+    if (el) chipY.set(indexRef.current * pageH - el.scrollTop);
     scheduleSettle();
   };
 
@@ -307,7 +310,7 @@ export function ReelsApp() {
   const calloutMode =
     crumb.status === "peek"
       ? "peek"
-      : crumb.status === "signals" && found.length > 0 && !captionOpen && !swiping && !holding
+      : crumb.status === "signals" && found.length > 0 && !captionOpen && !holding
         ? "chip"
         : "hidden";
 
@@ -323,7 +326,7 @@ export function ReelsApp() {
       {/* Video area: shrinks to the top when the caption sheet opens */}
       <motion.div
         className="absolute inset-x-0 top-0 overflow-clip"
-        style={{ bottom: NAV_H, transformOrigin: "50% 0%" }}
+        style={{ bottom: 0, transformOrigin: "50% 0%" }}
         animate={
           captionOpen
             ? { scale: shrinkScale, y: 58, borderRadius: 18 / shrinkScale }
@@ -382,7 +385,7 @@ export function ReelsApp() {
         </div>
 
         {/* Progress bar */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] bg-white/20">
+        <div className="pointer-events-none absolute inset-x-0 h-[2px] bg-white/20" style={{ bottom: NAV_H }}>
           <motion.div className="h-full bg-white/90" style={{ width: progress }} />
         </div>
       </motion.div>
@@ -454,7 +457,8 @@ export function ReelsApp() {
           if (crumb.status === "off") dispatch({ type: "TURN_ON" });
         }}
       />
-      <BottomNav height={NAV_H} />
+      <BottomNav />
+      <HomeIndicator />
 
       <CaptionSheet
         open={captionOpen}
@@ -476,6 +480,7 @@ export function ReelsApp() {
         signals={found}
         thread={thread}
         bottom={CHIP_BOTTOM}
+        followY={chipY}
         onOpen={() => dispatch({ type: "OPEN_PEEK" })}
         onClose={() => dispatch({ type: "CLOSE_PEEK" })}
         onSeeThread={openThread}

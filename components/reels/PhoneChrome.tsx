@@ -10,7 +10,7 @@ export function StatusBar({ crumbStatus, onIslandTap }: { crumbStatus: CrumbStat
   const found = crumbStatus === "signals" || crumbStatus === "peek";
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex h-[50px] items-center justify-between px-7 text-white max-[499px]:hidden">
-      <span className="w-14 text-[16px] font-semibold tracking-tight">8:31</span>
+      <span className="w-14 text-[16px] font-semibold tracking-tight">9:41</span>
 
       {/* Dynamic-island style pill. Crumb lives here as a tiny live indicator. */}
       <button
@@ -79,10 +79,15 @@ export function TopBar({ crumbOff, onTurnOn }: { crumbOff: boolean; onTurnOn: ()
   );
 }
 
-export function BottomNav({ height }: { height: number }) {
+export function BottomNav() {
+  // Floating glass pill over the video, like Instagram: nothing behind it but the reel.
   return (
-    <div className="absolute inset-x-0 bottom-0 z-20 bg-black" style={{ height }}>
-      <nav className="mx-auto mt-2.5 flex h-[50px] w-[290px] items-center justify-between rounded-full bg-[#1E1E20] px-2 text-white">
+    <div className="pointer-events-none absolute inset-x-0 z-20 flex justify-center" style={{ bottom: "var(--bottom-inset)" }}>
+      <nav
+        data-interactive
+        className="pointer-events-auto flex h-[56px] w-[300px] items-center justify-between rounded-full border border-white/15 bg-white/10 px-2 text-white backdrop-blur-xl backdrop-saturate-150"
+        style={{ WebkitBackdropFilter: "blur(24px) saturate(150%)" }}
+      >
         <NavIcon><House size={23} strokeWidth={1.9} /></NavIcon>
         <NavIcon active><Clapperboard size={23} strokeWidth={1.9} /></NavIcon>
         <NavIcon><Send size={22} strokeWidth={1.9} /></NavIcon>
@@ -91,15 +96,21 @@ export function BottomNav({ height }: { height: number }) {
           <span className="size-[25px] rounded-full bg-gradient-to-br from-[#C9B79C] to-[#6E5A44] ring-2 ring-white/90" />
         </NavIcon>
       </nav>
-      <div className="absolute bottom-2 left-1/2 h-[5px] w-[134px] -translate-x-1/2 rounded-full bg-white max-[499px]:hidden" />
     </div>
   );
 }
 
 function NavIcon({ children, active }: { children: React.ReactNode; active?: boolean }) {
   return (
-    <span className={"flex h-[38px] w-[50px] items-center justify-center rounded-full " + (active ? "bg-[#3A3A3D]" : "")}>
+    <span className={"flex h-[38px] w-[50px] items-center justify-center rounded-full " + (active ? "bg-white/15" : "")}>
       {children}
     </span>
+  );
+}
+
+// Only in the desktop frame; a real phone draws its own.
+export function HomeIndicator() {
+  return (
+    <div className="pointer-events-none absolute bottom-2 left-1/2 z-30 h-[5px] w-[134px] -translate-x-1/2 rounded-full bg-white max-[499px]:hidden" />
   );
 }
