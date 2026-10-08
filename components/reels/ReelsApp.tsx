@@ -7,7 +7,7 @@ import { Heart, Play, Volume2, VolumeX } from "lucide-react";
 import { reels } from "@/lib/data/reels";
 import type { Reel } from "@/lib/types";
 import { getThread } from "@/lib/data/threads";
-import { ANNOUNCE_MS, REST_MS, crumbReducer, initialCrumbState, isListening, shownCount } from "@/lib/crumb-machine";
+import { ANNOUNCE_MS, LOOK_MS, REST_MS, crumbReducer, initialCrumbState, isListening, shownCount } from "@/lib/crumb-machine";
 import { dueSignals, foundSignals } from "@/lib/playback";
 import { useReelClock } from "@/lib/use-reel-clock";
 import { readStore, writeStore } from "@/lib/storage";
@@ -171,10 +171,10 @@ export function ReelsApp() {
   }, [index]);
   useEffect(() => {
     const a = reel.aside;
-    if (!a || asideShown.current || t < a.at || crumb.status === "off" || crumb.open || crumb.announcing || crumb.resting) return;
+    if (!a || asideShown.current || t < a.at || crumb.status === "off" || crumb.open || crumb.announcing || crumb.resting || crumb.looking) return;
     asideShown.current = true;
     setAside(a);
-  }, [t, reel.aside, crumb.status, crumb.open, crumb.announcing, crumb.resting]);
+  }, [t, reel.aside, crumb.status, crumb.open, crumb.announcing, crumb.resting, crumb.looking]);
   useEffect(() => {
     if (!aside) return;
     const timer = setTimeout(() => setAside(null), aside.holdMs ?? ANNOUNCE_MS);
@@ -188,6 +188,14 @@ export function ReelsApp() {
     const timer = setTimeout(() => dispatch({ type: "ANNOUNCE_DONE", id }), ANNOUNCE_MS);
     return () => clearTimeout(timer);
   }, [crumb.announcing]);
+
+  // On a new reel (or opening the app), Crumb is seen listening for a few
+  // seconds before its first chip, even when a flag is due straight away.
+  useEffect(() => {
+    if (!crumb.looking) return;
+    const timer = setTimeout(() => dispatch({ type: "LOOK_DONE" }), LOOK_MS);
+    return () => clearTimeout(timer);
+  }, [crumb.looking, index]);
 
   // ...then rests as a plain widget before the next queued flag gets its turn.
   useEffect(() => {

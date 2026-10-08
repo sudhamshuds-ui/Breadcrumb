@@ -14,6 +14,8 @@
 //   queue       Flags found while a chip was showing or the widget was
 //               resting; they wait their turn so chips never come back to back.
 //   resting     The pause after a chip folds back, before the next one.
+//   looking     The first few seconds on a reel: Crumb is seen listening
+//               (scan glow) before any chip, even if a flag is due at 0:01.
 //   open        The widget has opened into its card: the peek card when there
 //               are flags, otherwise "Nothing flagged yet".
 
@@ -27,6 +29,7 @@ export interface CrumbState {
   announcing: string | null;
   queue: string[];
   resting: boolean;
+  looking: boolean;
   open: boolean;
 }
 
@@ -35,6 +38,7 @@ export type CrumbEvent =
   | { type: "SIGNAL_DUE"; id: string }
   | { type: "ANNOUNCE_DONE"; id: string }
   | { type: "REST_DONE" }
+  | { type: "LOOK_DONE" }
   | { type: "SCAN_COMPLETE" }
   | { type: "OPEN" }
   | { type: "CLOSE" }
@@ -47,6 +51,8 @@ export type CrumbEvent =
 // minimum rest as a plain widget before the next chip.
 export const ANNOUNCE_MS = 3000;
 export const REST_MS = 2000;
+// How long Crumb visibly listens on a new reel before its first chip.
+export const LOOK_MS = 4000;
 
 // Flags the tester has actually seen (the badge count): found minus queued.
 export function shownCount(state: CrumbState): number {
@@ -61,6 +67,7 @@ export function initialCrumbState(enabled = true, mode: ActivationMode = "always
     announcing: null,
     queue: [],
     resting: false,
+    looking: enabled,
     open: false,
   };
 }
@@ -72,8 +79,8 @@ export function isListening(status: CrumbStatus): boolean {
 export function crumbReducer(state: CrumbState, event: CrumbEvent): CrumbState {
   switch (event.type) {
     case "REEL_ENTER": {
-      const base = { ...state, found: [], announcing: null, queue: [], resting: false, open: false };
-      return state.status === "off" ? base : { ...base, status: "scanning" };
+      const base = { ...state, found: [], announcing: null, queue: [], resting: false, looking: false, open: false };
+      return state.status === "off" ? base : { ...base, status: "scanning", looking: true };
     }
 
     case "SIGNAL_DUE": {
@@ -81,9 +88,10 @@ export function crumbReducer(state: CrumbState, event: CrumbEvent): CrumbState {
       const found = [...state.found, event.id];
       // The card is open and already lists it.
       if (state.open) return { ...state, status: "signals", found };
-      // A chip is showing or the widget is resting: wait in line.
-      if (state.announcing || state.resting) {
-        return { ...state, status: "signals", found, queue: [...state.queue, event.id] };
+      // A chip is showing, the widget is resting or still taking its first
+      // look: wait in line. Until a flag has been shown, keep the scan glow.
+      if (state.announcing || state.resting || state.looking) {
+        return { ...state, found, queue: [...state.queue, event.id] };
       }
       return { ...state, status: "signals", found, announcing: event.id };
     }
@@ -93,8 +101,20 @@ export function crumbReducer(state: CrumbState, event: CrumbEvent): CrumbState {
 
     case "REST_DONE": {
       if (!state.resting) return state;
+      if (state.looking) return { ...state, resting: false };
       const [next, ...rest] = state.queue;
-      return next ? { ...state, resting: false, announcing: next, queue: rest } : { ...state, resting: false };
+      return next
+        ? { ...state, status: "signals", resting: false, announcing: next, queue: rest }
+        : { ...state, resting: false };
+    }
+
+    case "LOOK_DONE": {
+      if (!state.looking) return state;
+      if (state.resting || state.announcing || state.open) return { ...state, looking: false };
+      const [next, ...rest] = state.queue;
+      return next
+        ? { ...state, status: "signals", looking: false, announcing: next, queue: rest }
+        : { ...state, looking: false };
     }
 
     case "SCAN_COMPLETE":
@@ -104,13 +124,13 @@ export function crumbReducer(state: CrumbState, event: CrumbEvent): CrumbState {
     case "OPEN":
       if (state.status === "off") return state;
       // The card lists everything, queued flags included.
-      return { ...state, open: true, announcing: null, queue: [], resting: false };
+      return { ...state, status: state.found.length > 0 ? "signals" : state.status, open: true, announcing: null, queue: [], resting: false, looking: false };
 
     case "CLOSE":
       return state.open ? { ...state, open: false } : state;
 
     case "TURN_OFF":
-      return { ...state, status: "off", found: [], announcing: null, queue: [], resting: false, open: false };
+      return { ...state, status: "off", found: [], announcing: null, queue: [], resting: false, looking: false, open: false };
 
     case "TURN_ON":
       // Coming back always brings the plain widget, never a chip: what was
@@ -125,6 +145,7 @@ export function crumbReducer(state: CrumbState, event: CrumbEvent): CrumbState {
         announcing: null,
         queue: [],
         resting: true,
+        looking: false,
         open: false,
       };
 
@@ -132,7 +153,7 @@ export function crumbReducer(state: CrumbState, event: CrumbEvent): CrumbState {
       // Resuming partway through a reel: what was already said counts as
       // found, quietly, so nothing old is re-announced as a chip.
       if (state.status === "off" || event.alreadySaid.length === 0) return state;
-      return { ...state, status: "signals", found: event.alreadySaid, announcing: null, queue: [], resting: false };
+      return { ...state, status: "signals", found: event.alreadySaid, announcing: null, queue: [], resting: false, looking: false };
 
     case "SET_MODE":
       return { ...state, mode: event.mode };
