@@ -12,6 +12,7 @@ import { useReelClock } from "@/lib/use-reel-clock";
 import { readStore, writeStore } from "@/lib/storage";
 import { CrumbHandle } from "@/components/crumb/CrumbHandle";
 import { CrumbCallout } from "@/components/crumb/CrumbCallout";
+import { EdgeGlow } from "@/components/crumb/EdgeGlow";
 import { ReelVideo } from "./ReelVideo";
 import { ReelChrome } from "./ReelChrome";
 import { CaptionSheet } from "./CaptionSheet";
@@ -65,6 +66,17 @@ export function ReelsApp() {
   const reel = reels[index];
   const thread = getThread(reel.threadId);
   const found = foundSignals(reel, crumb.found);
+
+  // TEST: Siri-style screen-edge glow on flagged reels. It blooms again for
+  // each new signal found. Add ?edgeglow=0 to the link to switch it off.
+  const edgeGlowOn = params.get("edgeglow") !== "0";
+  const edgePulse =
+    edgeGlowOn &&
+    reel.tier === "flag" &&
+    (crumb.status === "signals" || crumb.status === "peek") &&
+    crumb.found.length > 0
+      ? reels.indexOf(reel) * 100 + crumb.found.length
+      : null;
 
   // Every reel's <video>, so the clock can read whichever one is on screen.
   const videos = useRef(new Map<string, HTMLVideoElement>());
@@ -575,6 +587,8 @@ export function ReelsApp() {
       />
 
       {/* ---- Crumb overlay ---- */}
+      <EdgeGlow pulse={edgePulse} />
+
       <CrumbCallout
         mode={calloutMode}
         tier={reel.tier}
