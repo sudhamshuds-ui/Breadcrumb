@@ -20,7 +20,7 @@ import { BottomNav, HomeIndicator, StatusBar, TopBar } from "./PhoneChrome";
 const NAV_H = 76; // floating glass nav: ~24 from the screen bottom + 52 tall
 const PROGRESS_BOTTOM = NAV_H + 20; // thin progress line floats above the nav, like Instagram
 const CHROME_BOTTOM = PROGRESS_BOTTOM + 8; // creator row and action rail sit above the line
-const CHIP_BOTTOM = NAV_H + 104; // above the creator row and caption
+const CHIP_BOTTOM = CHROME_BOTTOM + 104; // above the creator row and caption
 const HANDLE_TOP = 268;
 const SHEET_TOP_RATIO = 0.4;
 // Fallback only, for browsers without the "scrollend" event: scroll counts as

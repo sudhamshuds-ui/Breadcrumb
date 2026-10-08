@@ -19,21 +19,24 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
 
   // Home-screen app on iPhone: iOS hands the page a box that is short by the
   // status bar's height, leaving a black band under the nav. Use the real
-  // screen height instead.
+  // screen height instead. Kept in React state (not a class on <html>) so a
+  // re-render can't wipe it.
+  const [appH, setAppH] = useState<number | null>(null);
   useEffect(() => {
     const nav = window.navigator as Navigator & { standalone?: boolean };
     const standalone = nav.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
     if (!standalone) return;
-    const root = document.documentElement;
     const size = () => {
       const portrait = window.innerHeight >= window.innerWidth;
-      const h = portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height);
-      root.style.setProperty("--app-h", `${h}px`);
+      setAppH(portrait ? Math.max(screen.width, screen.height) : Math.min(screen.width, screen.height));
     };
-    root.classList.add("standalone");
     size();
     window.addEventListener("resize", size);
-    return () => window.removeEventListener("resize", size);
+    window.addEventListener("orientationchange", size);
+    return () => {
+      window.removeEventListener("resize", size);
+      window.removeEventListener("orientationchange", size);
+    };
   }, []);
 
   return (
@@ -43,13 +46,14 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
         style={{ transform: `scale(${scale})` }}
       >
         <div
-          className="phone-ui relative overflow-clip bg-black max-[499px]:!fixed max-[499px]:!inset-0 max-[499px]:!h-auto max-[499px]:!w-auto max-[499px]:!rounded-none max-[499px]:!shadow-none"
+          className={`phone-ui ${appH ? "standalone" : ""} relative overflow-clip bg-black max-[499px]:!fixed max-[499px]:!inset-0 max-[499px]:!h-auto max-[499px]:!w-auto max-[499px]:!rounded-none max-[499px]:!shadow-none`}
           style={{
             width: W,
             height: H,
             borderRadius: 54,
             boxShadow: "0 0 0 12px #0b0b0b, 0 0 0 13px #3a3a3a, 0 40px 80px rgba(0,0,0,0.5)",
-          }}
+            ...(appH ? { "--app-h": `${appH}px` } : {}),
+          } as React.CSSProperties}
         >
           {children}
         </div>
