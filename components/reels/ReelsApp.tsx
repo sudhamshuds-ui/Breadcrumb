@@ -441,6 +441,9 @@ export function ReelsApp() {
 
   // ---- navigation to the Breadcrumb thread --------------------------------
   const openThread = () => {
+    // Stop the reel the moment Breadcrumb opens, not when the next page lands.
+    getActiveVideo()?.pause();
+    setPaused(true);
     const at = t.toFixed(1);
     // Save where we are in this page's own history entry, so coming back
     // (button or the phone's back swipe) lands on the same reel and moment.
