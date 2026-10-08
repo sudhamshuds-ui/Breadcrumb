@@ -28,16 +28,39 @@ export const ReelVideo = memo(function ReelVideo({
 }: Props) {
   const ref = useRef<HTMLVideoElement>(null);
   const started = useRef(false);
+  const activeRef = useRef(active);
+  activeRef.current = active;
 
   useEffect(() => {
     register(reel.id, ref.current);
     return () => register(reel.id, null);
   }, [reel.id, register]);
 
+  // iPhones ignore "preload" and leave paused videos unloaded, which shows as
+  // black when you swipe to them. Playing a neighbour for a moment (muted)
+  // makes the phone actually load it, so it's ready the instant it's reached.
+  const warmed = useRef(false);
+  useEffect(() => {
+    const v = ref.current;
+    if (!v || active || !preload || warmed.current) return;
+    warmed.current = true;
+    v.muted = true; // never a blip of sound from a reel you can't see
+    v.play()
+      .then(() => {
+        if (!activeRef.current) v.pause();
+      })
+      .catch(() => {});
+  }, [active, preload]);
+
   // React's `muted` attribute is unreliable, so set the property directly.
   useEffect(() => {
     if (ref.current) ref.current.muted = muted;
   }, [muted]);
+
+  // Warm-up left a neighbour muted; give it the current sound setting on arrival.
+  useEffect(() => {
+    if (active && ref.current) ref.current.muted = muted;
+  }, [active, muted]);
 
   useEffect(() => {
     const v = ref.current;
@@ -63,14 +86,20 @@ export const ReelVideo = memo(function ReelVideo({
   return (
     <div
       className="absolute inset-0 overflow-clip"
-      style={{ background: `linear-gradient(170deg, ${reel.theme.from} 0%, ${reel.theme.to} 100%)` }}
+      // The first-frame still sits behind the video, so a reel that hasn't
+      // started yet shows its picture instead of black.
+      style={{
+        backgroundColor: reel.theme.from,
+        backgroundImage: `url(${reel.poster})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
     >
       <video
         ref={ref}
-        // "#t=0.001" makes iPhones draw the first frame before playing.
-        src={`${reel.src}#t=0.001`}
-        poster={reel.poster ?? undefined}
-        className="absolute inset-0 h-full w-full object-cover"
+        src={reel.src}
+        poster={reel.poster}
+        className="absolute inset-0 h-full w-full bg-transparent object-cover"
         muted
         playsInline
         loop

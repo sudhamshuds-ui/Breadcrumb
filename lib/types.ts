@@ -55,7 +55,7 @@ export interface Reel {
   id: string;
   creator: { handle: string; name: string; initials: string; ring: [string, string] };
   src: string; // /reels/xxx.mp4
-  poster: string | null;
+  poster: string; // first frame, shown while the video loads
   tier: ReelTier;
   caption: string;
   postedOn: string;

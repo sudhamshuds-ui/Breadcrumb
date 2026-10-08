@@ -33,7 +33,9 @@ export function useReelClock(getVideo: () => HTMLVideoElement | null) {
   const seek = useCallback(
     (s: number) => {
       const v = getVideo();
-      if (v) v.currentTime = s;
+      // Skip needless seeks: on iPhones even a seek to where the video already
+      // is can flash black for a moment.
+      if (v && Math.abs(v.currentTime - s) > 0.1) v.currentTime = s;
       time.set(s);
       setT(s);
     },
