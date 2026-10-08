@@ -201,6 +201,38 @@ body {
   opacity: 0.18;
 }
 
+/* Flagged caption phrases: the letters themselves carry a slowly flowing
+   two-tone gradient (no box). Flows a few times when the caption opens, then
+   rests; the selected phrase keeps flowing while its detail is open. */
+.signal-ink {
+  background-image: linear-gradient(
+    100deg,
+    var(--ink) 0%,
+    var(--ink2) 25%,
+    var(--ink) 50%,
+    var(--ink2) 75%,
+    var(--ink) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  animation: signal-ink-flow 3.2s linear 3;
+}
+.signal-ink[data-selected] {
+  animation-iteration-count: infinite;
+}
+@keyframes signal-ink-flow {
+  from { background-position: 0% 50%; }
+  to { background-position: 100% 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .signal-ink { animation: none; }
+}
+
 @keyframes bokeh-drift {
   0%, 100% { transform: translate3d(0, 0, 0); }
   50% { transform: translate3d(14px, -18px, 0); }

@@ -13,10 +13,11 @@ interface Props {
   liked: boolean;
   onToggleLike: (id: string) => void;
   onOpenCaption: () => void;
+  onShare: () => void;
   bottomInset: number;
 }
 
-export const ReelChrome = memo(function ReelChrome({ reel, liked, onToggleLike, onOpenCaption, bottomInset }: Props) {
+export const ReelChrome = memo(function ReelChrome({ reel, liked, onToggleLike, onOpenCaption, onShare, bottomInset }: Props) {
   const onLike = () => onToggleLike(reel.id);
   return (
     <>
@@ -43,7 +44,7 @@ export const ReelChrome = memo(function ReelChrome({ reel, liked, onToggleLike, 
         <RailButton label="Repost" count={reel.stats.reposts}>
           <Repeat2 size={27} strokeWidth={1.9} />
         </RailButton>
-        <RailButton label="Share" count={reel.stats.shares}>
+        <RailButton label="Share" count={reel.stats.shares} onClick={onShare}>
           <Send size={25} strokeWidth={1.9} />
         </RailButton>
         <RailButton label="Save">

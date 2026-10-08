@@ -6,8 +6,18 @@ import { CircleDollarSign, Heart, ImageIcon, Smile } from "lucide-react";
 import type { Reel, Signal } from "@/lib/types";
 import { captionParts, moneyTag } from "@/lib/playback";
 import { CrumbGlyph } from "@/components/crumb/CrumbGlyph";
-import { KIND_TINT, KindBadge } from "@/components/crumb/SignalIcon";
+import { KindBadge } from "@/components/crumb/SignalIcon";
 import { Avatar } from "./ReelChrome";
+
+// Two neighbouring hues per signal kind, so the gradient moves between them
+// (like Gemini's wordmark) while staying in that kind's pastel family.
+const INK: Record<Signal["kind"], [string, string]> = {
+  health_claim: ["var(--sig-lavender)", "var(--sig-blue)"],
+  affiliate_link: ["var(--sig-blue)", "var(--sig-lavender)"],
+  discount_code: ["var(--sig-peach)", "#f2c6b4"],
+  paid_partnership: ["#e0a64f", "var(--sig-peach)"],
+  product_mention: ["var(--sig-mint)", "var(--sig-blue)"],
+};
 
 interface Props {
   open: boolean;
@@ -84,20 +94,23 @@ export function CaptionSheet({ open, reel, top, signals, onClose, onOpenPeek }: 
             <p className="mt-3 text-[15px] leading-[1.4] whitespace-pre-line text-white/95">
               {parts.map((p, i) =>
                 p.signal ? (
-                  <button
+                  // An inline span, not a <button>, so long phrases wrap like text
+                  <span
                     key={i}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setSelected(selected?.id === p.signal!.id ? null : p.signal!)}
-                    className="rounded-[4px] px-0.5 text-left text-white"
-                    style={{
-                      // Tinted by signal kind, same pastel as the chip badge
-                      background: `color-mix(in srgb, ${KIND_TINT[p.signal.kind].solid} ${
-                        selected?.id === p.signal.id ? 70 : 40
-                      }%, transparent)`,
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter" && e.key !== " ") return;
+                      e.preventDefault();
+                      setSelected(selected?.id === p.signal!.id ? null : p.signal!);
                     }}
+                    className="signal-ink cursor-pointer font-semibold"
+                    data-selected={selected?.id === p.signal.id || undefined}
+                    style={{ "--ink": INK[p.signal.kind][0], "--ink2": INK[p.signal.kind][1] } as React.CSSProperties}
                   >
                     {p.text}
-                  </button>
+                  </span>
                 ) : (
                   <span key={i}>{p.text}</span>
                 ),

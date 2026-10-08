@@ -15,6 +15,7 @@ import { CrumbCallout } from "@/components/crumb/CrumbCallout";
 import { ReelVideo } from "./ReelVideo";
 import { ReelChrome } from "./ReelChrome";
 import { CaptionSheet } from "./CaptionSheet";
+import { ShareSheet } from "./ShareSheet";
 import { BottomNav, HomeIndicator, StatusBar, TopBar } from "./PhoneChrome";
 
 const NAV_H = 76; // floating glass nav: ~24 from the screen bottom + 52 tall
@@ -53,6 +54,8 @@ export function ReelsApp() {
   const [liked, setLiked] = useState<Record<string, boolean>>({});
   const [bursts, setBursts] = useState<Burst[]>([]);
   const [toast, setToast] = useState<null | "off" | "paused">(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null); // "Sent to Jess", "Link copied"
   const [frameH, setFrameH] = useState(844);
 
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -156,7 +159,14 @@ export function ReelsApp() {
     return () => clearTimeout(id);
   }, [toast]);
 
-  const blocked = captionOpen || crumb.status === "peek" || crumb.menuOpen;
+  const blocked = captionOpen || shareOpen || crumb.status === "peek" || crumb.menuOpen;
+
+  // Share confirmations disappear on their own.
+  useEffect(() => {
+    if (!notice) return;
+    const id = setTimeout(() => setNotice(null), 2200);
+    return () => clearTimeout(id);
+  }, [notice]);
 
   // ---- vertical feed: native snap scrolling, like the real app ------------
   // The browser does the swipe (momentum, snap, rubber-banding); we only read
@@ -338,6 +348,7 @@ export function ReelsApp() {
         dispatch({ type: "CLOSE_PEEK" });
         dispatch({ type: "CLOSE_MENU" });
         setCaptionOpen(false);
+        setShareOpen(false);
       }
       if (blocked) return;
       if (e.key === "ArrowDown") scrollToIndex(indexRef.current + 1);
@@ -358,6 +369,7 @@ export function ReelsApp() {
     setCaptionOpen(true);
     dispatch({ type: "CAPTION_OPENED" });
   }, []);
+  const openShare = useCallback(() => setShareOpen(true), []);
   const toggleLike = useCallback((id: string) => setLiked((l) => ({ ...l, [id]: !l[id] })), []);
 
   const progress = useTransform(time, (v) => `${(v / reel.durationSec) * 100}%`);
@@ -368,7 +380,7 @@ export function ReelsApp() {
   const calloutMode =
     crumb.status === "peek"
       ? "peek"
-      : crumb.status === "signals" && found.length > 0 && !captionOpen && !holding
+      : crumb.status === "signals" && found.length > 0 && !captionOpen && !shareOpen && !holding
         ? "chip"
         : "hidden";
 
@@ -435,6 +447,7 @@ export function ReelsApp() {
                       liked={Boolean(liked[r.id])}
                       onToggleLike={toggleLike}
                       onOpenCaption={openCaption}
+                      onShare={openShare}
                       bottomInset={CHROME_BOTTOM}
                     />
                   </motion.div>
@@ -526,6 +539,26 @@ export function ReelsApp() {
       />
       <BottomNav />
       <HomeIndicator />
+
+      <ShareSheet open={shareOpen} reel={reel} onClose={() => setShareOpen(false)} onNotice={setNotice} />
+
+      {/* Share confirmation */}
+      <AnimatePresence>
+        {notice && (
+          <motion.div
+            key={notice}
+            role="status"
+            className="pointer-events-none absolute left-1/2 z-40 -translate-x-1/2 rounded-full bg-white px-4 py-2.5 text-[14px] font-medium whitespace-nowrap text-black"
+            style={{ bottom: CHIP_BOTTOM }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            transition={{ duration: 0.22 }}
+          >
+            {notice}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <CaptionSheet
         open={captionOpen}
