@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ViewportDebug } from "./ViewportDebug";
 
 const W = 390;
 const H = 844;
@@ -33,11 +32,22 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
         setTimeout(() => (root.style.minHeight = ""), 300);
       });
     };
-    const id = setTimeout(nudge, 100);
-    return () => clearTimeout(id);
+    // iOS ignores it if it runs too early, so retry after load and on the
+    // first touch; once the window is full height there's nothing left to do.
+    const fixed = () => window.innerHeight >= Math.max(screen.width, screen.height) - 1;
+    const tryNudge = () => {
+      const portrait = window.innerHeight >= window.innerWidth;
+      if (portrait && !fixed()) nudge();
+    };
+    const timers = [300, 800, 1600].map((ms) => setTimeout(tryNudge, ms));
+    window.addEventListener("load", tryNudge);
+    window.addEventListener("touchstart", tryNudge, { passive: true });
+    return () => {
+      timers.forEach(clearTimeout);
+      window.removeEventListener("load", tryNudge);
+      window.removeEventListener("touchstart", tryNudge);
+    };
   }, []);
-  const [isPhone, setIsPhone] = useState(false); // TEMPORARY: for ViewportDebug
-  useEffect(() => setIsPhone(window.innerWidth < 500), []);
 
   return (
     <div className="flex min-h-dvh w-full items-center justify-center bg-[#2a2a2a] max-[499px]:bg-black">
@@ -55,7 +65,6 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
           } as React.CSSProperties}
         >
           {children}
-          {isPhone && <ViewportDebug />}
         </div>
       </div>
     </div>
