@@ -1,12 +1,12 @@
 import { Suspense } from "react";
 import { PhoneFrame } from "@/components/phone/PhoneFrame";
-import { ReelsApp } from "@/components/reels/ReelsApp";
+import { ReelsRoute } from "@/components/reels/ReelsRoute";
 
 export default function ReelsPage() {
   return (
     <PhoneFrame>
       <Suspense fallback={<div className="absolute inset-0 bg-black" />}>
-        <ReelsApp />
+        <ReelsRoute />
       </Suspense>
     </PhoneFrame>
   );

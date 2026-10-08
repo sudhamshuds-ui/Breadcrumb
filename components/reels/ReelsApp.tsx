@@ -11,7 +11,17 @@ import { ANNOUNCE_MS, LOOK_MS, REST_MS, crumbReducer, initialCrumbState, isListe
 import { dueSignals, foundSignals } from "@/lib/playback";
 import { useReelClock } from "@/lib/use-reel-clock";
 import { readStore, writeStore } from "@/lib/storage";
+import {
+  resumeStepAfterThread,
+  shouldStartTutorial,
+  tutorialHoldsChip,
+  tutorialLocksFeed,
+  tutorialPausesReel,
+  tutorialReducer,
+  type TutorialStep,
+} from "@/lib/onboarding";
 import { CrumbWidget } from "@/components/crumb/CrumbWidget";
+import { TutorialOverlay } from "@/components/onboarding/TutorialOverlay";
 import { ReelVideo } from "./ReelVideo";
 import { ReelChrome } from "./ReelChrome";
 import { CaptionSheet } from "./CaptionSheet";
@@ -31,6 +41,7 @@ const SETTLE_MS = 260;
 const HAS_SCROLLEND = typeof window !== "undefined" && "onscrollend" in window;
 const ENABLED_KEY = "crumb.enabled";
 const FROM_REELS_KEY = "breadcrumb.threadFromReels"; // shared with ThreadView
+const TUTORIAL_RESUME_KEY = "crumb.tutorialResume"; // a stage to pick up after a thread
 
 interface Burst {
   id: number;
@@ -64,6 +75,7 @@ export function ReelsApp() {
   const [shareOpen, setShareOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null); // "Sent to Jess", "Link copied"
   const [frameH, setFrameH] = useState(844);
+  const [tutorial, tutorialDispatch] = useReducer(tutorialReducer, "finished" as TutorialStep);
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -103,7 +115,7 @@ export function ReelsApp() {
     window.addEventListener("click", unlock);
     return () => window.removeEventListener("click", unlock);
   }, [getActiveVideo]);
-  const playing = !holding && !paused;
+  const playing = !holding && !paused && !tutorialPausesReel(tutorial);
 
   const { t, time, seek } = useReelClock(getActiveVideo);
 
@@ -138,10 +150,41 @@ export function ReelsApp() {
     window.history.pushState(window.history.state, "", window.location.href);
   }, []);
 
-  // ---- persistence: remember if Crumb was turned off ----------------------
+  // ---- first run: the tutorial, or remember if Crumb was turned off -------
+  // Only on the `/onboarding` link (`?tutorial=1`); plain `/reels` skips it.
   useEffect(() => {
+    let resume: TutorialStep | null = null;
+    try {
+      resume = window.sessionStorage.getItem(TUTORIAL_RESUME_KEY) as TutorialStep | null;
+      window.sessionStorage.removeItem(TUTORIAL_RESUME_KEY);
+    } catch {}
+    const start =
+      resume ??
+      (shouldStartTutorial({
+        requested: params.get("tutorial") === "1",
+        startIndex,
+        startTime,
+      })
+        ? "listen"
+        : null);
+    if (start) {
+      tutorialDispatch({ type: "START", at: start });
+      return; // the tutorial needs Crumb on
+    }
     if (readStore<boolean>(ENABLED_KEY, true) === false) dispatch({ type: "TURN_OFF" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Crumb tells the tutorial what the tester just did.
+  useEffect(() => {
+    if (crumb.announcing) tutorialDispatch({ type: "CRUMB_ANNOUNCED" });
+  }, [crumb.announcing]);
+  useEffect(() => {
+    tutorialDispatch({ type: crumb.open ? "CRUMB_OPENED" : "CRUMB_CLOSED" });
+  }, [crumb.open]);
+  useEffect(() => {
+    tutorialDispatch({ type: crumb.status === "off" ? "CRUMB_OFF" : "CRUMB_ON" });
+  }, [crumb.status]);
   useEffect(() => {
     if (crumb.status === "off") writeStore(ENABLED_KEY, false);
     else writeStore(ENABLED_KEY, true);
@@ -157,6 +200,7 @@ export function ReelsApp() {
     const first = lastIndex.current === null;
     lastIndex.current = index;
     if (first) return; // the initial state already fits the first reel
+    tutorialDispatch({ type: "NEXT_REEL" });
     seek(0);
     dispatch({ type: "REEL_ENTER" });
   }, [index, seek]);
@@ -184,10 +228,10 @@ export function ReelsApp() {
   // A flag stretches the widget into a chip for a moment, then it folds back.
   useEffect(() => {
     const id = crumb.announcing;
-    if (!id) return;
+    if (!id || tutorialHoldsChip(tutorial)) return; // the tutorial waits for a tap
     const timer = setTimeout(() => dispatch({ type: "ANNOUNCE_DONE", id }), ANNOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [crumb.announcing]);
+  }, [crumb.announcing, tutorial]);
 
   // On a new reel (or opening the app), Crumb is seen listening for a few
   // seconds before its first chip, even when a flag is due straight away.
@@ -226,7 +270,7 @@ export function ReelsApp() {
     return () => clearTimeout(id);
   }, [toast]);
 
-  const blocked = captionOpen || shareOpen || crumb.open;
+  const blocked = captionOpen || shareOpen || crumb.open || tutorialLocksFeed(tutorial);
 
   // Share confirmations disappear on their own.
   useEffect(() => {
@@ -452,6 +496,13 @@ export function ReelsApp() {
     // Stop the reel the moment Breadcrumb opens, not when the next page lands.
     getActiveVideo()?.pause();
     setPaused(true);
+    // Mid-tutorial: carry on with the next stage when the tester comes back.
+    if (tutorial === "done") tutorialDispatch({ type: "SKIP" });
+    else if (tutorial !== "finished") {
+      try {
+        window.sessionStorage.setItem(TUTORIAL_RESUME_KEY, resumeStepAfterThread(tutorial));
+      } catch {}
+    }
     const at = t.toFixed(1);
     // Save where we are in this page's own history entry, so coming back
     // (button or the phone's back swipe) lands on the same reel and moment.
@@ -685,13 +736,20 @@ export function ReelsApp() {
         onClose={() => dispatch({ type: "CLOSE" })}
         onTurnOff={() => {
           dispatch({ type: "TURN_OFF" });
-          setToast("off");
+          if (tutorial === "finished") setToast("off"); // the tutorial explains it instead
         }}
         onTurnOn={() => {
           turnOn();
           setToast(null);
         }}
         onSeeThread={openThread}
+      />
+
+      <TutorialOverlay
+        step={tutorial}
+        frameRef={viewportRef}
+        coachBottom={WIDGET_BOTTOM + 70}
+        onSkip={() => tutorialDispatch({ type: "SKIP" })}
       />
 
       {/* Off confirmation, with the way back */}

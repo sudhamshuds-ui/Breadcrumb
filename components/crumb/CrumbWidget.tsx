@@ -18,7 +18,10 @@ import { CommunityRow, CountTag, FindingsList } from "./Findings";
 //   tab       swipe it right (or tap) to bring Crumb back
 
 const SIZE = 46;
-const HOLD_MS = 650;
+// Hold to turn off: nothing shows for a normal tap; the ring only appears
+// once the finger has stayed down a moment, then fills.
+export const HOLD_DELAY_MS = 300;
+export const HOLD_MS = 800;
 const SURFACE = "#EDEDED";
 const SPRING = { type: "spring", stiffness: 420, damping: 36 } as const;
 
@@ -161,6 +164,7 @@ export function CrumbWidget(props: Props) {
             }}
           >
             <span
+              data-tutorial="tab"
               className="flex h-[48px] w-[14px] items-center justify-center rounded-r-full"
               style={{ background: SURFACE, boxShadow: "0 2px 10px rgba(0,0,0,0.25)" }}
             >
@@ -205,13 +209,13 @@ function Widget({
 
   const progress = useMotionValue(0);
   const ringOpacity = useTransform(progress, [0, 0.05], [0, 1]);
-  const press = useRef<{ x: number; y: number; timer: ReturnType<typeof setTimeout>; anim: AnimationPlaybackControls } | null>(null);
+  const press = useRef<{ x: number; y: number; timers: ReturnType<typeof setTimeout>[]; anim?: AnimationPlaybackControls } | null>(null);
   const held = useRef(false);
 
   const cancelHold = () => {
     if (!press.current) return;
-    clearTimeout(press.current.timer);
-    press.current.anim.stop();
+    press.current.timers.forEach(clearTimeout);
+    press.current.anim?.stop();
     press.current = null;
     animate(progress, 0, { duration: 0.18 });
   };
@@ -231,20 +235,28 @@ function Widget({
         onPointerDown={(e) => {
           if (disabled) return;
           held.current = false;
-          const anim = animate(progress, 1, { duration: HOLD_MS / 1000, ease: "linear" });
-          const timer = setTimeout(() => {
-            held.current = true;
-            press.current = null;
-            // Stop the fill first: if its last frame lands after the reset,
-            // the ring stays drawn around the widget when Crumb comes back.
-            anim.stop();
-            progress.jump(0);
-            onHold();
-            // Phones don't always send a click after a long press; never let a
-            // stale flag swallow the next real tap.
-            setTimeout(() => (held.current = false), 600);
-          }, HOLD_MS);
-          press.current = { x: e.clientX, y: e.clientY, timer, anim };
+          const p: NonNullable<typeof press.current> = { x: e.clientX, y: e.clientY, timers: [] };
+          press.current = p;
+          // A normal tap lifts before this fires, so it never shows the ring.
+          p.timers.push(
+            setTimeout(() => {
+              p.anim = animate(progress, 1, { duration: HOLD_MS / 1000, ease: "linear" });
+              p.timers.push(
+                setTimeout(() => {
+                  held.current = true;
+                  press.current = null;
+                  // Stop the fill first: if its last frame lands after the reset,
+                  // the ring stays drawn around the widget when Crumb comes back.
+                  p.anim?.stop();
+                  progress.jump(0);
+                  onHold();
+                  // Phones don't always send a click after a long press; never let a
+                  // stale flag swallow the next real tap.
+                  setTimeout(() => (held.current = false), 600);
+                }, HOLD_MS),
+              );
+            }, HOLD_DELAY_MS),
+          );
         }}
         onPointerMove={(e) => {
           const p = press.current;
@@ -286,6 +298,7 @@ function Widget({
 
       <motion.button
         type="button"
+        data-tutorial="widget"
         layout
         layoutId={layoutId}
         disabled={disabled}
@@ -455,6 +468,7 @@ function CloseButton({ onClose }: { onClose: () => void }) {
     <button
       type="button"
       onClick={onClose}
+      data-tutorial="close"
       aria-label="Close"
       className="-my-1 flex size-9 shrink-0 items-center justify-center rounded-full text-crumb-body active:bg-crumb-hairline"
     >
