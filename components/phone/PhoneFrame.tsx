@@ -37,14 +37,18 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
   // until the window fills the screen.
   useEffect(() => {
     const root = document.documentElement;
-    const update = () => root.classList.toggle("page-locked", !isShortHomeScreen());
+    const update = () => {
+      const short = isShortHomeScreen();
+      root.classList.toggle("page-locked", !short);
+      root.classList.toggle("page-pullable", short);
+    };
     update();
     window.addEventListener("resize", update);
     window.visualViewport?.addEventListener("resize", update);
     return () => {
       window.removeEventListener("resize", update);
       window.visualViewport?.removeEventListener("resize", update);
-      root.classList.remove("page-locked");
+      root.classList.remove("page-locked", "page-pullable");
     };
   }, []);
 

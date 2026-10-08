@@ -200,6 +200,11 @@ body {
    except while the home-screen app is open short (the black strip), when the
    page must stay pullable so a pull-down can fix it. */
 @media (max-width: 499px) {
+  /* Strip showing: 1px taller than the window, so a pull-down on the nav or
+     top bar actually moves the page (a page that exactly fits can't be pulled). */
+  html.page-pullable {
+    min-height: calc(100% + 1px);
+  }
   html.page-locked,
   html.page-locked body {
     height: 100%;
