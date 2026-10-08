@@ -80,13 +80,13 @@ export function TopBar({ crumbOff, onTurnOn }: { crumbOff: boolean; onTurnOn: ()
 }
 
 export function BottomNav() {
-  // Floating glass pill over the video, like Instagram: nothing behind it but the reel.
+  // Floating see-through pill over the video. No blur: redrawing a blur over
+  // moving video every frame made swiping stutter on phones.
   return (
     <div className="pointer-events-none absolute inset-x-0 z-20 flex justify-center" style={{ bottom: "var(--bottom-inset)" }}>
       <nav
         data-interactive
-        className="pointer-events-auto flex h-[52px] w-[300px] items-center justify-between rounded-full border border-white/15 bg-white/10 px-2 text-white backdrop-blur-xl backdrop-saturate-150"
-        style={{ WebkitBackdropFilter: "blur(24px) saturate(150%)" }}
+        className="pointer-events-auto flex h-[52px] w-[300px] items-center justify-between rounded-full border border-white/15 bg-black/30 px-2 text-white"
       >
         <NavIcon><House size={23} strokeWidth={1.9} /></NavIcon>
         <NavIcon active><Clapperboard size={23} strokeWidth={1.9} /></NavIcon>
