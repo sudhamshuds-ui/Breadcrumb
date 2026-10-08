@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { isShortHomeScreen } from "@/components/phone/PhoneFrame";
 
 // On-device diagnostics for bugs that only happen on the iPhone. Switch on
 // with any URL ending `?debug=1` (remembered on the device, survives
@@ -85,7 +86,7 @@ export function DebugHud() {
           `${window.location.pathname}${window.location.search}`,
           `inner ${window.innerWidth}x${window.innerHeight} screen ${screen.width}x${screen.height}`,
           `vv h${Math.round(vv?.height ?? 0)} top${Math.round(vv?.offsetTop ?? 0)} scrollY ${Math.round(window.scrollY)}`,
-          `frame top${Math.round(frame?.top ?? -1)} h${Math.round(frame?.height ?? -1)}`,
+          `frame top${Math.round(frame?.top ?? -1)} h${Math.round(frame?.height ?? -1)} home=${(navigator as Navigator & { standalone?: boolean }).standalone ? "flag" : ""}${matchMedia("(display-mode: standalone)").matches ? "+manifest" : ""} short=${isShortHomeScreen() ? "yes" : "no"} locked=${document.documentElement.classList.contains("page-locked") ? "yes" : "no"}`,
           `widget ${w ? `${Math.round(w.left)},${Math.round(w.top)} ${Math.round(w.width)}x${Math.round(w.height)}` : "none"} ×${widgets} status=${status ?? "-"} card=${document.querySelector('[role="dialog"]') ? "open" : "closed"}`,
         ].join("\n"),
       );

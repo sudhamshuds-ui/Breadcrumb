@@ -5,6 +5,16 @@ import { useEffect, useState } from "react";
 const W = 390;
 const H = 844;
 
+// Home-screen app opened short of the screen (the black strip under the nav).
+// iOS reports home-screen mode one of two ways depending on how the icon was
+// added (old `standalone` flag, or the manifest's display mode), so check both.
+export function isShortHomeScreen(): boolean {
+  const nav = window.navigator as Navigator & { standalone?: boolean };
+  const homeScreen = nav.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+  const portrait = window.innerHeight >= window.innerWidth;
+  return homeScreen && portrait && window.innerHeight < Math.max(screen.width, screen.height) - 1;
+}
+
 // On phones the app fills the screen. On desktop it sits in a 390 × 844
 // phone frame, scaled down to fit the window height.
 export function PhoneFrame({ children }: { children: React.ReactNode }) {
@@ -27,12 +37,7 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
   // until the window fills the screen.
   useEffect(() => {
     const root = document.documentElement;
-    const nav = window.navigator as Navigator & { standalone?: boolean };
-    const update = () => {
-      const portrait = window.innerHeight >= window.innerWidth;
-      const short = nav.standalone === true && portrait && window.innerHeight < Math.max(screen.width, screen.height) - 1;
-      root.classList.toggle("page-locked", !short);
-    };
+    const update = () => root.classList.toggle("page-locked", !isShortHomeScreen());
     update();
     window.addEventListener("resize", update);
     window.visualViewport?.addEventListener("resize", update);
@@ -55,7 +60,9 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
     const settle = () => {
       clearTimeout(timer);
       timer = setTimeout(() => {
-        if (fingers === 0 && offset()) window.scrollTo(0, 0);
+        // While the strip shows, leave the tester's pull-down alone: it's
+        // what makes iOS give the app the full screen.
+        if (fingers === 0 && offset() && !isShortHomeScreen()) window.scrollTo(0, 0);
       }, 150);
     };
     const down = (e: TouchEvent) => {
