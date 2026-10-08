@@ -10,13 +10,14 @@ import { KindBadge } from "@/components/crumb/SignalIcon";
 import { Avatar } from "./ReelChrome";
 
 // Two neighbouring hues per signal kind, so the gradient moves between them
-// (like Gemini's wordmark) while staying in that kind's pastel family.
+// (like Gemini's wordmark). Brighter, more saturated cousins of the chip
+// pastels: the pastels blend into the white caption text on the dark sheet.
 const INK: Record<Signal["kind"], [string, string]> = {
-  health_claim: ["var(--sig-lavender)", "var(--sig-blue)"],
-  affiliate_link: ["var(--sig-blue)", "var(--sig-lavender)"],
-  discount_code: ["var(--sig-peach)", "#f2c6b4"],
-  paid_partnership: ["#e0a64f", "var(--sig-peach)"],
-  product_mention: ["var(--sig-mint)", "var(--sig-blue)"],
+  health_claim: ["#C9A2FF", "#8DB4FF"], // lavender to periwinkle
+  affiliate_link: ["#6CC0FF", "#B49CFF"], // sky to violet
+  discount_code: ["#FF9A76", "#FFC978"], // coral to apricot
+  paid_partnership: ["#FFC44D", "#FF8C66"], // gold to coral
+  product_mention: ["#45EFB0", "#C6F86A"], // mint to lime
 };
 
 interface Props {

@@ -220,6 +220,9 @@ body {
   color: transparent;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
+  /* Soft glow traced around the letter shapes (a text-shadow would show
+     through the see-through letters and muddy the gradient) */
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--ink) 55%, transparent));
   animation: signal-ink-flow 3.2s linear 3;
 }
 .signal-ink[data-selected] {
