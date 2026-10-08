@@ -67,6 +67,8 @@ export interface Reel {
   transcript: TranscriptLine[]; // spoken audio, from the transcript files
   comments: Comment[];
   signals: Signal[];
+  // Just for fun, not a flag: a one-off chip (no badge, no peek card entry).
+  aside?: { emoji: string; label?: string; at: number; holdMs?: number };
   threadId: string | null; // null = no thread yet
 }
 

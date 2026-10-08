@@ -228,12 +228,102 @@ body {
 .signal-ink[data-selected] {
   animation-iteration-count: infinite;
 }
+/* On light surfaces (thread page): deeper inks, no glow */
+.signal-ink.on-light {
+  filter: none;
+}
 @keyframes signal-ink-flow {
   from { background-position: 0% 50%; }
   to { background-position: 100% 50%; }
 }
 @media (prefers-reduced-motion: reduce) {
   .signal-ink { animation: none; }
+}
+
+/* ---- Crumb widget glow (Figma "Widget glowing - detecting" / "flagging") ----
+   Three blurred light layers circle the rim at different speeds and
+   directions, so the colour slides around the edge like light catching it;
+   an outer ring breathes out and fades. Tones are set by the component
+   (--g1 highlight, --g2 main, --g3 deep, --g4 bright edge, --ring). */
+.crumb-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+.crumb-glow .orbit {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+.crumb-glow .blob {
+  position: absolute;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--g1) 0%, var(--g2) 50%, var(--g3) 100%);
+}
+/* wide soft wash: the "Ellipse 9" layer */
+.crumb-glow .o1 .blob { inset: -2.5px; transform: translate(-1.25px, -1px); filter: blur(3px); opacity: 0.9; }
+/* faint counter-light: "Ellipse 10" at 20% */
+.crumb-glow .o2 .blob { inset: -2px; transform: translate(1.25px, 1.25px); filter: blur(2px); opacity: 0.4; }
+/* bright tight rim: "Ellipse 11" */
+.crumb-glow .o3 .blob {
+  inset: -1.25px;
+  transform: translate(-0.8px, 0.6px);
+  filter: blur(0.7px);
+  background: linear-gradient(135deg, var(--g4) 0%, var(--g2) 55%, var(--g3) 100%);
+}
+.crumb-glow .ring {
+  position: absolute;
+  inset: -8.5px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, transparent 84%, color-mix(in srgb, var(--ring) 55%, transparent) 94%, var(--ring) 100%);
+  filter: blur(0.6px);
+  opacity: 0;
+}
+
+/* Scanning: alive. Orbits never line up, so it never reads as a loop. */
+.crumb-glow[data-mode="scanning"] .o1 { animation: crumb-orbit 6.8s linear infinite; }
+.crumb-glow[data-mode="scanning"] .o2 { animation: crumb-orbit 10.4s linear infinite reverse; }
+.crumb-glow[data-mode="scanning"] .o3 { animation: crumb-orbit 4.9s linear infinite; }
+.crumb-glow[data-mode="scanning"] .ring { animation: crumb-ring 2.4s cubic-bezier(0.2, 0.7, 0.3, 1) infinite; }
+.crumb-glow[data-mode="scanning"] .breathe { animation: crumb-breathe 2.6s ease-in-out infinite; }
+
+/* Flagged: one sweep and two ring pulses per new flag, then it rests lit. */
+.crumb-glow[data-mode="flagged"] .o1 { animation: crumb-orbit 2.4s cubic-bezier(0.22, 1, 0.36, 1) 1; }
+.crumb-glow[data-mode="flagged"] .o3 { animation: crumb-orbit 1.8s cubic-bezier(0.22, 1, 0.36, 1) 1; }
+.crumb-glow[data-mode="flagged"] .ring { animation: crumb-ring 1.8s cubic-bezier(0.2, 0.7, 0.3, 1) 2; }
+.crumb-glow[data-mode="flagged"] .breathe { animation: crumb-breathe 2.4s ease-in-out 3; }
+
+.crumb-glow .breathe { position: absolute; inset: 0; }
+
+@keyframes crumb-orbit {
+  to { transform: rotate(360deg); }
+}
+/* The pulse: born at the circle's rim (ring 63px, circle 46px = 0.73),
+   scales outward and fades away; the tail of the cycle is a quiet pause. */
+@keyframes crumb-ring {
+  0% { transform: scale(0.73); opacity: 0; }
+  6% { transform: scale(0.76); opacity: 0.95; }
+  70% { transform: scale(1.32); opacity: 0; }
+  100% { transform: scale(1.32); opacity: 0; }
+}
+@keyframes crumb-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
+/* Long-press feedback ring around the widget */
+.crumb-hold-ring {
+  position: absolute;
+  inset: -5px;
+  pointer-events: none;
+  transform: rotate(-90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crumb-glow .orbit,
+  .crumb-glow .ring,
+  .crumb-glow .breathe { animation: none !important; }
 }
 
 @keyframes bokeh-drift {

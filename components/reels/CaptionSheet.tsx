@@ -2,24 +2,13 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { CircleDollarSign, Heart, ImageIcon, Smile } from "lucide-react";
+import { Heart, ImageIcon, Smile } from "lucide-react";
 import type { Reel, Signal } from "@/lib/types";
-import { captionParts, moneyTag } from "@/lib/playback";
-import { CrumbGlyph } from "@/components/crumb/CrumbGlyph";
-import { KindBadge } from "@/components/crumb/SignalIcon";
+import { captionParts } from "@/lib/playback";
+import { CrumbMini } from "@/components/crumb/CrumbWidget";
+import { inkStyle, KindBadge } from "@/components/crumb/SignalIcon";
 import { Avatar } from "./ReelChrome";
 import { MY_AVATAR, avatarFor } from "@/lib/avatars";
-
-// Two neighbouring hues per signal kind, so the gradient moves between them
-// (like Gemini's wordmark). Brighter, more saturated cousins of the chip
-// pastels: the pastels blend into the white caption text on the dark sheet.
-const INK: Record<Signal["kind"], [string, string]> = {
-  health_claim: ["#C9A2FF", "#8DB4FF"], // lavender to periwinkle
-  affiliate_link: ["#6CC0FF", "#B49CFF"], // sky to violet
-  discount_code: ["#FF9A76", "#FFC978"], // coral to apricot
-  paid_partnership: ["#FFC44D", "#FF8C66"], // gold to coral
-  product_mention: ["#45EFB0", "#C6F86A"], // mint to lime
-};
 
 interface Props {
   open: boolean;
@@ -34,7 +23,6 @@ interface Props {
 export function CaptionSheet({ open, reel, top, signals, onClose, onOpenPeek }: Props) {
   const reduce = useReducedMotion();
   const [selected, setSelected] = useState<Signal | null>(null);
-  const tag = moneyTag(signals);
   const parts = captionParts(reel.caption, signals);
 
   return (
@@ -74,23 +62,20 @@ export function CaptionSheet({ open, reel, top, signals, onClose, onOpenPeek }: 
               </span>
             </div>
 
-            {tag && (
-              <motion.button
-                type="button"
-                onClick={onOpenPeek}
+            {/* Crumb itself, in miniature: the widget is hidden while the sheet is up */}
+            {signals.length > 0 && (
+              <motion.div
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0, transition: { delay: 0.2 } }}
-                // 44px tap area around a 28px pill
-                className="crumb-type group mt-1.5 -mb-1.5 flex h-11 items-center"
+                className="crumb-type mt-3 flex items-center gap-3"
               >
-                <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-sig-peach pl-1 pr-2.5 text-[12.5px] font-medium text-crumb-ink group-active:opacity-80">
-                  <span className="flex size-5 items-center justify-center rounded-full bg-crumb-surface">
-                    <CrumbGlyph size={10} />
-                  </span>
-                  <CircleDollarSign size={13} strokeWidth={2.2} />
-                  {tag}
-                </span>
-              </motion.button>
+                <CrumbMini tier={reel.tier} count={signals.length} onTap={onOpenPeek} />
+                <button type="button" onClick={onOpenPeek} className="text-left text-[13.5px] leading-snug text-white/75 active:text-white">
+                  {reel.tier === "flag" ? "Crumb found" : "Crumb noticed"} {signals.length}{" "}
+                  {signals.length === 1 ? "thing" : "things"} in this reel.{" "}
+                  <span className="font-medium text-white">See what</span>
+                </button>
+              </motion.div>
             )}
 
             <p className="mt-3 text-[15px] leading-[1.4] whitespace-pre-line text-white/95">
@@ -109,7 +94,7 @@ export function CaptionSheet({ open, reel, top, signals, onClose, onOpenPeek }: 
                     }}
                     className="signal-ink cursor-pointer font-semibold"
                     data-selected={selected?.id === p.signal.id || undefined}
-                    style={{ "--ink": INK[p.signal.kind][0], "--ink2": INK[p.signal.kind][1] } as React.CSSProperties}
+                    style={inkStyle(p.signal.kind, "dark")}
                   >
                     {p.text}
                   </span>
@@ -143,7 +128,7 @@ export function CaptionSheet({ open, reel, top, signals, onClose, onOpenPeek }: 
 
             {signals.length > 0 && !selected && (
               <p className="mt-2 flex items-center gap-1.5 text-[12px] text-white/55">
-                <CrumbGlyph size={10} className="opacity-70 invert" /> Tap a highlight to see what Crumb found
+                Tap a highlight to see what Crumb found
               </p>
             )}
 

@@ -2,17 +2,16 @@
 
 import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion, useTransform } from "motion/react";
 import { Heart, Play, Volume2, VolumeX } from "lucide-react";
 import { reels } from "@/lib/data/reels";
+import type { Reel } from "@/lib/types";
 import { getThread } from "@/lib/data/threads";
-import { crumbReducer, initialCrumbState, isListening } from "@/lib/crumb-machine";
+import { ANNOUNCE_MS, crumbReducer, initialCrumbState, isListening } from "@/lib/crumb-machine";
 import { dueSignals, foundSignals } from "@/lib/playback";
 import { useReelClock } from "@/lib/use-reel-clock";
 import { readStore, writeStore } from "@/lib/storage";
-import { CrumbHandle } from "@/components/crumb/CrumbHandle";
-import { CrumbCallout } from "@/components/crumb/CrumbCallout";
-import { EdgeGlow } from "@/components/crumb/EdgeGlow";
+import { CrumbWidget } from "@/components/crumb/CrumbWidget";
 import { ReelVideo } from "./ReelVideo";
 import { ReelChrome } from "./ReelChrome";
 import { CaptionSheet } from "./CaptionSheet";
@@ -23,7 +22,7 @@ const NAV_H = 76; // floating glass nav: ~24 from the screen bottom + 52 tall
 const PROGRESS_BOTTOM = NAV_H + 20; // thin progress line floats above the nav, like Instagram
 const CHROME_BOTTOM = PROGRESS_BOTTOM + 8; // creator row and action rail sit above the line
 const CHIP_BOTTOM = CHROME_BOTTOM + 104; // above the creator row and caption
-const HANDLE_TOP = 268;
+const WIDGET_BOTTOM = CHIP_BOTTOM + 16; // Crumb's widget: above the creator row, with breathing room
 const SHEET_TOP_RATIO = 0.4;
 // Fallback only, for browsers without the "scrollend" event: scroll counts as
 // "done" after this long without a scroll event. Long enough that an iPhone
@@ -55,7 +54,7 @@ export function ReelsApp() {
   const [captionOpen, setCaptionOpen] = useState(false);
   const [liked, setLiked] = useState<Record<string, boolean>>({});
   const [bursts, setBursts] = useState<Burst[]>([]);
-  const [toast, setToast] = useState<null | "off" | "paused">(null);
+  const [toast, setToast] = useState<null | "off">(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null); // "Sent to Jess", "Link copied"
   const [frameH, setFrameH] = useState(844);
@@ -68,16 +67,7 @@ export function ReelsApp() {
   const thread = getThread(reel.threadId);
   const found = foundSignals(reel, crumb.found);
 
-  // TEST: Siri-style screen-edge glow on flagged reels. It blooms again for
-  // each new signal found. Add ?edgeglow=0 to the link to switch it off.
-  const edgeGlowOn = params.get("edgeglow") !== "0";
-  const edgePulse =
-    edgeGlowOn &&
-    reel.tier === "flag" &&
-    (crumb.status === "signals" || crumb.status === "peek") &&
-    crumb.found.length > 0
-      ? reels.indexOf(reel) * 100 + crumb.found.length
-      : null;
+  const announcing = crumb.announcing ? found.find((f) => f.id === crumb.announcing) ?? null : null;
 
   // Every reel's <video>, so the clock can read whichever one is on screen.
   const videos = useRef(new Map<string, HTMLVideoElement>());
@@ -127,9 +117,6 @@ export function ReelsApp() {
     if (el) el.scrollTop = indexRef.current * pageH;
   }, [pageH]);
 
-  // The chip rides along with its reel while swiping instead of fading out.
-  const chipY = useMotionValue(0);
-
   // ---- back from a thread: forget it --------------------------------------
   // After going back, the browser still holds the thread as the "forward"
   // page, and on iPhone a swipe in from the right edge (e.g. pulling the
@@ -160,10 +147,35 @@ export function ReelsApp() {
     if (firstEnter.current) firstEnter.current = false;
     else seek(0);
     dispatch({ type: "REEL_ENTER" });
-    // The old chip has slid off-screen with its reel; bring the slot back once it's gone.
-    const id = setTimeout(() => chipY.set(0), 250);
-    return () => clearTimeout(id);
-  }, [index, seek, chipY]);
+  }, [index, seek]);
+
+  // Just for fun: a reel's "aside" chip (e.g. 😂 on the joke reel), once per
+  // visit, only while Crumb is on and nothing else is showing.
+  const [aside, setAside] = useState<Reel["aside"] | null>(null);
+  const asideShown = useRef(false);
+  useEffect(() => {
+    asideShown.current = false;
+    setAside(null);
+  }, [index]);
+  useEffect(() => {
+    const a = reel.aside;
+    if (!a || asideShown.current || t < a.at || crumb.status === "off" || crumb.open || crumb.announcing) return;
+    asideShown.current = true;
+    setAside(a);
+  }, [t, reel.aside, crumb.status, crumb.open, crumb.announcing]);
+  useEffect(() => {
+    if (!aside) return;
+    const timer = setTimeout(() => setAside(null), aside.holdMs ?? ANNOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [aside]);
+
+  // A flag stretches the widget into a chip for a moment, then it folds back.
+  useEffect(() => {
+    const id = crumb.announcing;
+    if (!id) return;
+    const timer = setTimeout(() => dispatch({ type: "ANNOUNCE_DONE", id }), ANNOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [crumb.announcing]);
 
   // ---- playback → Crumb: signals become due as the reel plays -------------
   useEffect(() => {
@@ -187,7 +199,7 @@ export function ReelsApp() {
     return () => clearTimeout(id);
   }, [toast]);
 
-  const blocked = captionOpen || shareOpen || crumb.status === "peek" || crumb.menuOpen;
+  const blocked = captionOpen || shareOpen || crumb.open;
 
   // Share confirmations disappear on their own.
   useEffect(() => {
@@ -255,8 +267,6 @@ export function ReelsApp() {
 
   const onScroll = () => {
     swipingRef.current = true;
-    const el = scrollerRef.current;
-    if (el) chipY.set(indexRef.current * pageH - el.scrollTop);
     scheduleSettle();
   };
 
@@ -271,10 +281,6 @@ export function ReelsApp() {
     const el = viewportRef.current;
     const scroller = scrollerRef.current;
     if (!el || !scroller) return;
-    if (crumb.menuOpen) {
-      dispatch({ type: "CLOSE_MENU" });
-      return;
-    }
     if (blocked) return;
 
     const rect = el.getBoundingClientRect();
@@ -373,8 +379,7 @@ export function ReelsApp() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        dispatch({ type: "CLOSE_PEEK" });
-        dispatch({ type: "CLOSE_MENU" });
+        dispatch({ type: "CLOSE" });
         setCaptionOpen(false);
         setShareOpen(false);
       }
@@ -402,7 +407,7 @@ export function ReelsApp() {
   // Stable callbacks so the memoised reel chrome doesn't re-render every tick.
   const openCaption = useCallback(() => {
     setCaptionOpen(true);
-    dispatch({ type: "CAPTION_OPENED" });
+    dispatch({ type: "CLOSE" });
   }, []);
   const openShare = useCallback(() => setShareOpen(true), []);
   const toggleLike = useCallback((id: string) => setLiked((l) => ({ ...l, [id]: !l[id] })), []);
@@ -410,14 +415,7 @@ export function ReelsApp() {
   const progress = useTransform(time, (v) => `${(v / reel.durationSec) * 100}%`);
   const sheetTop = Math.round(frameH * SHEET_TOP_RATIO);
   const shrinkScale = (sheetTop - 72) / pageH;
-  const crumbActive = crumb.status !== "off" && crumb.status !== "paused";
-
-  const calloutMode =
-    crumb.status === "peek"
-      ? "peek"
-      : crumb.status === "signals" && found.length > 0 && !captionOpen && !shareOpen && !holding
-        ? "chip"
-        : "hidden";
+  const crumbActive = crumb.status !== "off";
 
   return (
     <div
@@ -562,14 +560,14 @@ export function ReelsApp() {
       <AnimatePresence>
         {!captionOpen && !holding && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <TopBar crumbOff={crumb.status === "off"} onTurnOn={() => dispatch({ type: "TURN_ON" })} />
+            <TopBar />
           </motion.div>
         )}
       </AnimatePresence>
       <StatusBar
         crumbStatus={crumb.status}
         onIslandTap={() => {
-          if (crumb.status === "off") dispatch({ type: "TURN_ON" });
+          if (crumb.status === "off") dispatch({ type: "TURN_ON", alreadySaid: dueSignals(reel.signals, t).map((s) => s.id) });
         }}
       />
       <BottomNav />
@@ -605,79 +603,60 @@ export function ReelsApp() {
           // Show the peek card for everything Crumb can see in this reel.
           for (const s of reel.signals) dispatch({ type: "SIGNAL_DUE", id: s.id });
           setCaptionOpen(false);
-          dispatch({ type: "OPEN_PEEK" });
+          dispatch({ type: "OPEN" });
         }}
       />
 
-      {/* ---- Crumb overlay ---- */}
-      <EdgeGlow pulse={edgePulse} />
-
-      <CrumbCallout
-        mode={calloutMode}
-        tier={reel.tier}
-        signals={found}
+      {/* ---- Crumb: one widget does everything ---- */}
+      <CrumbWidget
+        status={crumb.status}
+        open={crumb.open}
+        announcing={announcing}
+        aside={crumb.status === "off" || crumb.open ? null : aside}
+        found={found}
+        reel={reel}
         thread={thread}
-        bottom={CHIP_BOTTOM}
-        followY={chipY}
-        onOpen={() => dispatch({ type: "OPEN_PEEK" })}
-        onClose={() => dispatch({ type: "CLOSE_PEEK" })}
+        bottom={WIDGET_BOTTOM}
+        hidden={captionOpen || shareOpen}
+        dimmed={holding}
+        onOpen={() => dispatch({ type: "OPEN" })}
+        onClose={() => dispatch({ type: "CLOSE" })}
+        onTurnOff={() => {
+          dispatch({ type: "TURN_OFF" });
+          setToast("off");
+        }}
+        onTurnOn={() => {
+          dispatch({ type: "TURN_ON", alreadySaid: dueSignals(reel.signals, t).map((s) => s.id) });
+          setToast(null);
+        }}
         onSeeThread={openThread}
       />
 
-      {/* Crumb stays solid while scrolling; it only dims with the hold-to-pause */}
-      <motion.div animate={{ opacity: holding ? 0.4 : 1 }}>
-        <CrumbHandle
-          status={crumb.status}
-          revealed={crumb.revealed}
-          menuOpen={crumb.menuOpen}
-          foundCount={crumb.found.length}
-          calm={reel.tier !== "flag"}
-          top={HANDLE_TOP}
-          onReveal={() => dispatch({ type: "REVEAL" })}
-          onTuck={() => dispatch({ type: "TUCK" })}
-          onToggleMenu={() => dispatch({ type: "TOGGLE_MENU" })}
-          onPauseToggle={() => {
-            if (crumb.status === "paused") {
-              dispatch({ type: "RESUME" });
-              setToast(null);
-            } else {
-              dispatch({ type: "PAUSE" });
-              setToast("paused");
-            }
-          }}
-          onTurnOff={() => {
-            dispatch({ type: "TURN_OFF" });
-            setToast("off");
-          }}
-          onOpenBreadcrumb={openThread}
-        />
-      </motion.div>
-
-      {/* Pause / off confirmation with a way back */}
+      {/* Off confirmation, with the way back */}
       <AnimatePresence>
         {toast && (
           <motion.div
             key={toast}
             data-interactive
             className="crumb-type absolute inset-x-3.5 z-40 flex h-12 items-center justify-between rounded-full border border-crumb-hairline-strong bg-crumb-surface pl-5 pr-1.5 text-crumb-ink"
-            style={{ bottom: CHIP_BOTTOM }}
+            style={{ bottom: WIDGET_BOTTOM + 70 }}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.24 }}
           >
             <span className="text-[14px] font-medium tracking-tight">
-              {toast === "off" ? "Crumb is off" : "Crumb is paused"}
+              Crumb is off. Swipe the tab to bring it back.
             </span>
             <button
               type="button"
               className="h-9 rounded-full px-3.5 text-[14px] font-medium text-crumb-accent active:bg-crumb-hairline"
               onClick={() => {
-                dispatch({ type: toast === "off" ? "TURN_ON" : "RESUME" });
+                dispatch({ type: "TURN_ON", alreadySaid: dueSignals(reel.signals, t).map((s) => s.id) });
                 setToast(null);
               }}
             >
-              {toast === "off" ? "Turn on" : "Resume"}
+              Turn on
             </button>
           </motion.div>
         )}

@@ -8,12 +8,12 @@ import { MY_AVATAR } from "@/lib/avatars";
 
 export function StatusBar({ crumbStatus, onIslandTap }: { crumbStatus: CrumbStatus; onIslandTap: () => void }) {
   const on = crumbStatus !== "off";
-  const found = crumbStatus === "signals" || crumbStatus === "peek";
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex h-[50px] items-center justify-between px-7 text-white max-[499px]:hidden">
       <span className="w-14 text-[16px] font-semibold tracking-tight">9:41</span>
 
-      {/* Dynamic-island style pill. Crumb lives here as a tiny live indicator. */}
+      {/* Dynamic-island style pill (desktop frame only). Crumb's mark shows
+          whether it's on; everything it finds stays in the widget. */}
       <button
         type="button"
         data-interactive
@@ -22,11 +22,10 @@ export function StatusBar({ crumbStatus, onIslandTap }: { crumbStatus: CrumbStat
         className="pointer-events-auto absolute left-1/2 top-[11px] flex h-[34px] w-[120px] -translate-x-1/2 items-center rounded-full bg-black pl-2"
       >
         <motion.span
-          className="relative flex size-[22px] items-center justify-center rounded-full bg-crumb-surface"
+          className="flex size-[22px] items-center justify-center rounded-full bg-[#EDEDED]"
           animate={{ opacity: on ? 1 : 0.3 }}
         >
-          <CrumbGlyph size={12} />
-          {found && <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-crumb-glow ring-2 ring-black" />}
+          <CrumbGlyph size={14} body="#0A0A0A" face="#EDEDED" />
         </motion.span>
       </button>
 
@@ -52,30 +51,13 @@ function Bars() {
   );
 }
 
-// On a real phone the device draws its own status bar, so the fake one is
-// hidden and Crumb's "turn on" shortcut moves into the top bar.
-export function TopBar({ crumbOff, onTurnOn }: { crumbOff: boolean; onTurnOn: () => void }) {
+export function TopBar() {
   return (
     <div className="pointer-events-none absolute inset-x-0 z-20 flex h-11 items-center justify-between px-4 text-white" style={{ top: "var(--top-inset)" }}>
       <span className="flex items-center gap-1 text-[22px] font-bold tracking-tight drop-shadow">
         Reels <ChevronDown size={18} strokeWidth={2.6} />
       </span>
-      <span className="flex items-center gap-3">
-        {crumbOff && (
-          <button
-            type="button"
-            data-interactive
-            onClick={onTurnOn}
-            aria-label="Turn Crumb on"
-            className="pointer-events-auto flex size-11 items-center justify-center min-[500px]:hidden"
-          >
-            <span className="flex size-[26px] items-center justify-center rounded-full bg-crumb-surface opacity-60">
-              <CrumbGlyph size={13} />
-            </span>
-          </button>
-        )}
-        <Camera size={25} strokeWidth={1.9} className="drop-shadow" />
-      </span>
+      <Camera size={25} strokeWidth={1.9} className="drop-shadow" />
     </div>
   );
 }

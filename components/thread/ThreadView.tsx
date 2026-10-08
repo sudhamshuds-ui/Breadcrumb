@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -19,32 +19,25 @@ import {
 } from "lucide-react";
 import type { DiscussionPost, Reel, Review, Thread } from "@/lib/types";
 import { peekLines } from "@/lib/playback";
-import { firstSentence, formatClock } from "@/lib/thread-view";
+import { firstSentence } from "@/lib/thread-view";
 import { addMyReview, readMyReviews, relationOf, sortReviews } from "@/lib/my-reviews";
 import { avatarFor, MY_AVATAR } from "@/lib/avatars";
 import { HEALTHDIRECT_PHONE, HEALTHDIRECT_TEL } from "@/lib/data/care";
 import { CrumbGlyph } from "@/components/crumb/CrumbGlyph";
-import { KindBadge, TRUST_TINT, TrustIcon } from "@/components/crumb/SignalIcon";
+import { useIconStyle } from "@/components/crumb/SignalIcon";
+import { CommunityRow, CountTag, FindingsList } from "@/components/crumb/Findings";
 import { CareSheet, type CareStart } from "./CareSheet";
 import { ReviewSheet } from "./ReviewSheet";
 
-// Built for a ~30 second visit: the three signals and the way to a
-// professional come first; people you know next; sources one tap deep;
-// everything else folded under "More on this thread".
+// Built for a ~30 second visit, in the widget's visual language: what Crumb
+// found (laid out exactly like the peek card), then the way to a
+// professional; people you know next; sources one tap deep; everything else
+// folded under "More on this thread". One help CTA at a time: the bottom bar
+// only appears once the care card has scrolled out of view.
+
+const SURFACE = "#EDEDED"; // the widget's light surface, used as the page
 
 const FROM_REELS_KEY = "breadcrumb.threadFromReels";
-
-const EVIDENCE_TAG: Record<Thread["trust"]["evidence"], string> = {
-  supported: "Supported",
-  mixed: "Mixed",
-  not_supported: "Not supported yet",
-  unknown: "No sources yet",
-};
-const MONEY_TAG: Record<Thread["trust"]["money"], string> = {
-  disclosed: "Disclosed",
-  detected: "Detected",
-  none_found: "None found",
-};
 
 export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
   const router = useRouter();
@@ -56,6 +49,21 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
   const [mine, setMine] = useState<Review[]>([]);
   const [allReviews, setAllReviews] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  const iconStyle = useIconStyle();
+
+  // One way to a professional on screen at a time: the bottom bar shows only
+  // while the care card is out of view.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const careRef = useRef<HTMLElement>(null);
+  const [careInView, setCareInView] = useState(true);
+  useEffect(() => {
+    const root = scrollRef.current;
+    const card = careRef.current;
+    if (!root || !card) return;
+    const io = new IntersectionObserver(([e]) => setCareInView(e.isIntersecting), { root, threshold: 0.2 });
+    io.observe(card);
+    return () => io.disconnect();
+  }, []);
 
   useEffect(() => setMine(readMyReviews(thread.id)), [thread.id]);
   useEffect(() => {
@@ -76,7 +84,6 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
     else router.replace(backUrl);
   };
 
-  const c = thread.trust.community;
   const reviews = useMemo(() => sortReviews([...mine, ...thread.reviews]), [mine, thread.reviews]);
   const known = reviews.filter((r) => r.mine || relationOf(r) === "friend");
   const shownReviews = allReviews ? reviews : known;
@@ -84,11 +91,11 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
   const discussionCount = thread.discussion.reduce((n, d) => n + 1 + (d.replies?.length ?? 0), 0);
 
   return (
-    <div className="crumb-type absolute inset-0 bg-crumb-surface text-crumb-ink">
-      <div className="absolute inset-0 overflow-y-auto overscroll-contain pb-[calc(96px+env(safe-area-inset-bottom))]">
+    <div className="crumb-type absolute inset-0 text-crumb-ink" style={{ background: SURFACE }}>
+      <div ref={scrollRef} className="absolute inset-0 overflow-y-auto overscroll-contain pb-[calc(96px+env(safe-area-inset-bottom))]">
         <header
-          className="sticky top-0 z-20 flex items-center justify-between border-b border-crumb-hairline bg-crumb-surface px-2 pb-2"
-          style={{ paddingTop: "calc(var(--top-inset) + 4px)" }}
+          className="sticky top-0 z-20 flex items-center justify-between border-b border-black/5 px-2 pb-2"
+          style={{ paddingTop: "calc(var(--top-inset) + 4px)", background: SURFACE }}
         >
           <button
             type="button"
@@ -98,55 +105,51 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
             <ChevronLeft size={22} /> Reel
           </button>
           <span className="flex items-center gap-1.5 text-[15px] font-medium">
-            <CrumbGlyph size={16} /> Breadcrumb
+            <CrumbGlyph size={22} body="#0A0A0A" face={SURFACE} /> Breadcrumb
           </span>
           <span className="w-[72px]" aria-hidden />
         </header>
 
-        <main className="px-4">
-          {/* The post: what this thread is about */}
-          <Link href={backUrl} replace className="mt-4 flex items-center gap-3 active:opacity-70">
+        <main className="px-3">
+          {/* The post this thread is about */}
+          <Link href={backUrl} replace className="mt-3 flex items-center gap-3 px-1 active:opacity-70">
             <span
-              className="relative h-[76px] w-[46px] shrink-0 overflow-hidden rounded-[10px] bg-crumb-ink"
+              className="relative h-[66px] w-[40px] shrink-0 overflow-hidden rounded-[9px] bg-crumb-ink"
               style={{ backgroundImage: `url(${reel.poster})`, backgroundSize: "cover", backgroundPosition: "center" }}
             >
               <span className="absolute inset-0 flex items-center justify-center bg-black/20 text-white">
-                <Play size={14} fill="currentColor" strokeWidth={0} />
+                <Play size={13} fill="currentColor" strokeWidth={0} />
               </span>
             </span>
             <span className="min-w-0">
-              <h1 className="text-[24px] leading-[1.15] tracking-[-0.02em] [text-wrap:balance]">{thread.productName}</h1>
-              <span className="mt-1 block truncate text-[13px] text-crumb-muted">
-                {reel.creator.handle}
-                {reel.paidPartner && ` · Paid partnership with ${reel.paidPartner}`}
-              </span>
+              <h1 className="text-[22px] leading-[1.15] tracking-[-0.02em] [text-wrap:balance]">{thread.productName}</h1>
+              <span className="mt-0.5 block truncate text-[13px] text-crumb-muted">{reel.creator.handle}</span>
             </span>
           </Link>
 
-          {/* Three signals, never one score */}
-          <section className="mt-6">
-            <h2 className="text-[19px] tracking-[-0.01em]">
-              {reel.tier === "flag" ? "What Crumb found" : "What this post states"}
-            </h2>
-            <div className="mt-3 divide-y divide-crumb-hairline rounded-[22px] bg-crumb-card ring-1 ring-crumb-hairline">
-              <SignalRow name="money" title="Money" tag={MONEY_TAG[thread.trust.money]} line={peekLines(reel.signals, thread)[0].line} />
-              <SignalRow name="evidence" title="Evidence" tag={EVIDENCE_TAG[thread.trust.evidence]} line={thread.evidenceNote} />
-              <SignalRow
-                name="community"
-                title="Community"
-                tag={`${c.positive} of ${c.reviews} positive`}
-                line={
-                  thread.friendNames.length > 0
-                    ? `${joinNames(thread.friendNames)} reviewed this`
-                    : "No one you know has reviewed this yet"
-                }
-                faces={thread.friendNames}
-              />
+          {/* What Crumb found: the peek card, at full size */}
+          <section className="mt-4 rounded-[28px] bg-white p-3">
+            <div className="flex items-center justify-between gap-2 px-1 pt-0.5">
+              <h2 className="flex items-center gap-2 text-[17px] font-medium tracking-[-0.01em]">
+                <CrumbGlyph size={22} />
+                {reel.tier === "flag" ? "Crumb found" : "Crumb noticed"}
+              </h2>
+              <CountTag tier={reel.tier} count={reel.signals.length} />
             </div>
+            <p className="mt-1 px-1 text-[13px] text-crumb-muted">{peekLines(reel.signals, thread)[0].line}</p>
+            <FindingsList
+              found={reel.signals}
+              thread={thread}
+              iconStyle={iconStyle}
+              hrefFor={(s) => `/reels?reel=${reel.id}&t=${Math.max(0, s.appearsAt - 1).toFixed(1)}`}
+              showQuotes
+              className="mt-2.5"
+            />
+            <CommunityRow thread={thread} iconStyle={iconStyle} className="mt-2" />
           </section>
 
           {/* The way to a professional: the main action */}
-          <section className="mt-4 rounded-[28px] bg-crumb-ink p-5 text-crumb-surface">
+          <section ref={careRef} className="mt-3 rounded-[28px] bg-crumb-ink p-5 text-crumb-surface">
             <h2 className="text-[21px] leading-tight tracking-[-0.015em] [text-wrap:balance]">
               Talk to a professional about {thread.care.topic}
             </h2>
@@ -178,7 +181,7 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
           {/* Reviews: people you know, then everyone on request */}
           <section className="mt-8">
             <div className="flex items-baseline justify-between gap-3">
-              <h2 className="text-[19px] tracking-[-0.01em]">
+              <h2 className="px-1 text-[18px] tracking-[-0.01em]">
                 {allReviews ? `All reviews (${reviews.length})` : "People you know"}
               </h2>
               <button type="button" onClick={() => setWriting(true)} className="text-[14px] font-medium text-crumb-accent">
@@ -186,7 +189,7 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
               </button>
             </div>
             {shownReviews.length > 0 ? (
-              <div className="mt-3 divide-y divide-crumb-hairline rounded-[22px] bg-crumb-card ring-1 ring-crumb-hairline">
+              <div className="mt-3 divide-y divide-crumb-hairline rounded-[24px] bg-white">
                 {shownReviews.map((r) => (
                   <ReviewRow key={r.id} review={r} />
                 ))}
@@ -207,8 +210,8 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
 
           {/* Sources: the takeaway up front, the detail one tap away */}
           <section className="mt-8">
-            <h2 className="text-[19px] tracking-[-0.01em]">What the evidence says</h2>
-            <div className="mt-3 divide-y divide-crumb-hairline rounded-[22px] bg-crumb-card ring-1 ring-crumb-hairline">
+            <h2 className="px-1 text-[18px] tracking-[-0.01em]">What the evidence says</h2>
+            <div className="mt-3 divide-y divide-crumb-hairline rounded-[24px] bg-white">
               {thread.sources.map((src) => (
                 <Fold
                   key={src.url}
@@ -232,36 +235,8 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
 
           {/* Depth for those who want it */}
           <section className="mt-8">
-            <h2 className="text-[19px] tracking-[-0.01em]">More on this thread</h2>
-            <div className="mt-3 divide-y divide-crumb-hairline rounded-[22px] bg-crumb-card ring-1 ring-crumb-hairline">
-              {reel.signals.length > 0 && (
-                <Fold title="Moments in the reel" meta={`${reel.signals.length} found`}>
-                  <div className="flex flex-col gap-1">
-                    {reel.signals.map((s) => (
-                      <Link
-                        key={s.id}
-                        href={`/reels?reel=${reel.id}&t=${Math.max(0, s.appearsAt - 1).toFixed(1)}`}
-                        replace
-                        className="-mx-2 flex gap-3 rounded-2xl p-2 active:bg-crumb-surface"
-                      >
-                        <KindBadge kind={s.kind} size={28} />
-                        <span className="min-w-0 flex-1">
-                          <span className="flex items-baseline justify-between gap-2 text-[14px] font-medium">
-                            {s.label}
-                            <span className="text-[13px] font-normal text-crumb-muted tabular-nums">{formatClock(s.appearsAt)}</span>
-                          </span>
-                          {(s.quote || s.captionQuote) && (
-                            <span className="mt-0.5 block text-[13px] leading-snug text-crumb-body">
-                              &ldquo;{s.quote ?? s.captionQuote}&rdquo;
-                            </span>
-                          )}
-                        </span>
-                      </Link>
-                    ))}
-                  </div>
-                </Fold>
-              )}
-
+            <h2 className="px-1 text-[18px] tracking-[-0.01em]">More on this thread</h2>
+            <div className="mt-3 divide-y divide-crumb-hairline rounded-[24px] bg-white">
               <Fold title="About the creator" meta={thread.creator.note}>
                 <dl className="grid grid-cols-3 gap-2 text-center">
                   <Stat value={String(thread.creator.postsReviewed)} label="posts reviewed" />
@@ -297,29 +272,39 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
         </main>
       </div>
 
-      {/* Always within reach */}
-      <div
-        className="absolute inset-x-0 bottom-0 z-30 border-t border-crumb-hairline bg-crumb-surface px-4 pt-3"
-        style={{ paddingBottom: "max(14px, env(safe-area-inset-bottom))" }}
-      >
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setCare("choose")}
-            className="flex h-12 flex-1 items-center justify-center rounded-full bg-crumb-accent text-[15px] font-medium text-white active:bg-crumb-accent-active"
+      {/* The way to a professional, once the care card has scrolled away.
+          Never both at once. */}
+      <AnimatePresence>
+        {!careInView && (
+          <motion.div
+            key="care-bar"
+            className="absolute inset-x-0 bottom-0 z-30 border-t border-black/5 px-4 pt-3"
+            style={{ paddingBottom: "max(14px, env(safe-area-inset-bottom))", background: SURFACE }}
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            transition={{ type: "spring", stiffness: 420, damping: 40 }}
           >
-            Talk to a professional
-          </button>
-          <button
-            type="button"
-            onClick={() => setWriting(true)}
-            aria-label="Write a review"
-            className="flex size-12 items-center justify-center rounded-full bg-crumb-card ring-1 ring-crumb-hairline-strong active:bg-crumb-hairline"
-          >
-            <SquarePen size={18} />
-          </button>
-        </div>
-      </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setCare("choose")}
+                className="flex h-12 flex-1 items-center justify-center rounded-full bg-crumb-accent text-[15px] font-medium text-white active:bg-crumb-accent-active"
+              >
+                Talk to a professional
+              </button>
+              <button
+                type="button"
+                onClick={() => setWriting(true)}
+                aria-label="Write a review"
+                className="flex size-12 items-center justify-center rounded-full bg-white active:bg-crumb-hairline"
+              >
+                <SquarePen size={18} />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {notice && (
@@ -348,43 +333,6 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
           setNotice("Review posted. Moderators will check it.");
         }}
       />
-    </div>
-  );
-}
-
-function SignalRow({
-  name,
-  title,
-  tag,
-  line,
-  faces,
-}: {
-  name: "money" | "evidence" | "community";
-  title: string;
-  tag: string;
-  line: string;
-  faces?: string[];
-}) {
-  return (
-    <div className="flex gap-3 p-3.5">
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-full text-crumb-ink" style={{ background: TRUST_TINT[name] }}>
-        <TrustIcon name={name} size={16} />
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-baseline justify-between gap-2">
-          <span className="text-[15px] font-medium">{title}</span>
-          <span className="text-[13px] font-medium">{tag}</span>
-        </div>
-        <p className="mt-0.5 text-[14px] leading-snug text-crumb-body">{line}</p>
-        {faces && faces.length > 0 && (
-          <div className="mt-2 flex -space-x-2">
-            {faces.map((n) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={n} src={avatarFor(n)} alt={n} className="size-6 rounded-full object-cover ring-2 ring-crumb-card" />
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }

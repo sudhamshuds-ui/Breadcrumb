@@ -97,6 +97,7 @@ export const reels: Reel[] = [
       { author: "two.of.us.91", text: "I say this all the time because it's just true", likes: 21, ago: "2d" },
     ],
     signals: [],
+    aside: { emoji: "😂😂", at: 11.2, holdMs: 4400 }, // after the punchline; lingers a little
     threadId: null,
   },
   {
