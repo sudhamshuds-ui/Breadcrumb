@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const W = 390;
 const H = 844;
@@ -19,6 +19,7 @@ export function isShortHomeScreen(): boolean {
 // phone frame, scaled down to fit the window height.
 export function PhoneFrame({ children }: { children: React.ReactNode }) {
   const [scale, setScale] = useState(1);
+  const uiRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fit = () => setScale(Math.min(1, (window.innerHeight - 40) / (H + 24)));
@@ -35,12 +36,31 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
   // home-screen app is open short: iOS sometimes leaves a black strip under
   // the nav until the page is pulled down once, so keep that pull possible
   // until the window fills the screen.
+  //
+  // While it's short, the app also stretches itself over the strip: the strip
+  // is still the app's own area (painted with the page's black), iOS just
+  // reports a shorter window. Sized to the full screen, the nav sits at the
+  // real bottom and the strip is gone without any pull. (Inline !important,
+  // because the phone layout's own sizes are !important in the class list.)
   useEffect(() => {
     const root = document.documentElement;
+    let stretched = false;
     const update = () => {
       const short = isShortHomeScreen();
       root.classList.toggle("page-locked", !short);
       root.classList.toggle("page-pullable", short);
+      const ui = uiRef.current;
+      if (!ui) return;
+      if (short) {
+        ui.style.setProperty("height", `${Math.max(screen.width, screen.height)}px`, "important");
+        ui.style.setProperty("bottom", "auto", "important");
+        stretched = true;
+      } else if (stretched) {
+        // Back to the frame's own size (the desktop frame needs its height).
+        ui.style.setProperty("height", `${H}px`);
+        ui.style.removeProperty("bottom");
+        stretched = false;
+      }
     };
     update();
     window.addEventListener("resize", update);
@@ -104,6 +124,7 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
         style={{ transform: `scale(${scale})` }}
       >
         <div
+          ref={uiRef}
           className={`phone-ui relative overflow-clip bg-black max-[499px]:!fixed max-[499px]:!inset-0 max-[499px]:!h-auto max-[499px]:!w-auto max-[499px]:!rounded-none max-[499px]:!shadow-none`}
           style={{
             width: W,
