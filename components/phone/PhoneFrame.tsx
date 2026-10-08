@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ViewportDebug } from "./ViewportDebug";
 
 const W = 390;
 const H = 844;
@@ -22,6 +23,8 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
   // screen height instead. Kept in React state (not a class on <html>) so a
   // re-render can't wipe it.
   const [appH, setAppH] = useState<number | null>(null);
+  const [isPhone, setIsPhone] = useState(false); // TEMPORARY: for ViewportDebug
+  useEffect(() => setIsPhone(window.innerWidth < 500), []);
   useEffect(() => {
     const nav = window.navigator as Navigator & { standalone?: boolean };
     const standalone = nav.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
@@ -56,6 +59,7 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
           } as React.CSSProperties}
         >
           {children}
+          {isPhone && <ViewportDebug />}
         </div>
       </div>
     </div>
