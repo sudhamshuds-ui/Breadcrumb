@@ -251,6 +251,19 @@ body {
   letter-spacing: -0.01em;
 }
 
+/* Browser surfaces carry the palette too: selection, caret, focus rings */
+.crumb-type ::selection {
+  background: color-mix(in srgb, var(--crumb-accent) 22%, transparent);
+  color: var(--crumb-ink);
+}
+.crumb-type textarea {
+  caret-color: var(--crumb-accent);
+}
+.crumb-type :focus-visible {
+  outline: 2px solid var(--crumb-accent);
+  outline-offset: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .motion-safe-anim { animation: none !important; }
 }

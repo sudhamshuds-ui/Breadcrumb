@@ -259,13 +259,25 @@ The user works on both a Windows PC (`D:\projects\Breadcrumb`) and a Mac (cloned
 - **Video playback** (`components/reels/ReelVideo.tsx`, `lib/use-reel-clock.ts`): every reel stays mounted; only the visible one plays. Crumb reads the video's own `currentTime`. Reels start muted (iPhones always allow that); the first tap anywhere turns sound on instead of pausing. Each reel has a first-frame poster (`reel-0N.jpg`) and neighbours are warmed up (muted play then pause) so swiping never flashes black.
 - **Caption sheet**: flagged phrases are gradient-filled text (two hues per signal kind, flows 3 times then rests, selected phrase keeps flowing) with a soft drop-shadow glow. Brighter than the chip pastels on purpose, for contrast on the dark sheet.
 - **Share sheet** (`ShareSheet.tsx`): Instagram-style; tick fictional friends then Send ("Sent to Tom"), Copy link, Share to… (the phone's real share menu), Add to story (pretend).
-- **Profile pictures** (`lib/avatars.ts`): the user's sketch is "you" (`public/avatars/me.jpg`); friends and commenters each have a fixed stock portrait (`stock-01..24.jpg`, randomuser.me; odd = women, even = men).
+- **Profile pictures** (`lib/avatars.ts`): the user's sketch is "you" (`public/avatars/me.jpg`); every friend, commenter, reviewer and discussion author has their own fixed stock portrait (`stock-01..32.jpg`, randomuser.me), assigned by name in `ASSIGNED`. Add new people there so nobody shares a face.
 - **Screen-edge glow (test)** (`components/crumb/EdgeGlow.tsx`): a Siri / Apple Intelligence style glow around the screen edges, only on `flag` reels. It blooms each time Crumb finds a new signal (reel 01 glows 3 times), flows around the border for about 5 seconds (0.6 s in, ~3.5 s flowing, ~1.2 s out), then fades. Colours: coral, peach, lavender, blue, pink, blended with `mix-blend-mode: screen` so it reads as light. The soft rounded ring is drawn once into a canvas image (corner radius 64, reaches 34 px in) and used as a mask; the flow is a rotating conic gradient underneath. No blur filters, and no clip of its own (the phone's screen rounds the outer corners). Switch it off with `?edgeglow=0` on the link, e.g. for A/B testing. The user approved the current look and timing.
 - **Crumb overlay** (Figma flow): tucked sliver, scanning, signals, pulled out, toggle pill. Chip morphs into the peek card. Three-phase glow (`CrumbGlow`). Review board at `/states`.
 - **Phone shell**: floating see-through nav pill (no blur, it made swiping stutter), creator row and progress line spaced like Instagram, 9:41 fake status bar in the desktop frame only.
-- **Thread page**: placeholder only (`/thread/[id]`), with a deep link back to the same reel and time. Threads exist for r1, r2, r4, r5 with fictional friend reviews and healthdirect sources.
+- **Breadcrumb thread pages** (`/thread/t1`, `t2`, `t4`, `t5`; `components/thread/ThreadView.tsx`), distilled for a ~30-second visit (impeccable shape + distill):
+  - First screen: compact post strip, then the three trust signals in one block (Money, Evidence, Community, each with its own tag, never one score), then the dark "Talk to a professional about {topic}" card. The `facts` threads say "What this post states" instead of "What Crumb found".
+  - "People you know" reviews (friends first, your own review on top marked "Waiting for moderation"), "See all N reviews" for contacts and everyone else.
+  - "What the evidence says": every source visible with type, publisher, year and a one-line takeaway; tap to open the full summary and link.
+  - "More on this thread" folds: moments in the reel (jump to the time), about the creator (posts reviewed, with signals, ads disclosed), and discussion (verified professionals marked, upvotes, replies).
+  - Sticky bottom bar: "Talk to a professional" and a review button.
+  - Mock care flow (`CareSheet.tsx`, `lib/data/care.ts`): fictional inner-west Sydney clinics, then time slots, then "You're booked in" (marked prototype only); schedule a call with a GP / pharmacist / dietitian; the real healthdirect line `tel:1800022222`.
+  - Write a review (`ReviewSheet.tsx`, `lib/my-reviews.ts`): bought it? worth it? text; saved in localStorage per thread.
+  - Every source in `lib/data/threads.ts` was verified on 2026-10-09 (links open; PubMed IDs match). Never add an unverified citation.
+  - `/thread/new` (and reel r3, which has no thread) still shows the "start a thread" placeholder.
+- **Swipe-back fix**: opening a thread saves the reel and time into the reels page's own history entry and sets `breadcrumb.threadFromReels` in sessionStorage. The thread's back button uses `router.back()`, and the reels page then pushes a fresh entry to wipe the "forward" thread page, so an iPhone edge swipe (e.g. pulling the Crumb handle) can't reopen it.
 
 ### Decisions made
+
+- **PRODUCT.md** holds the product truth for design work (users, success order, binding constraints, principles). `.impeccable/config.json` sets the Impeccable build path to code-first.
 
 - **Visual design** follows `DESIGN.md` (Cursor tokens: cream `#f7f7f4`, warm ink, hairlines, no shadows) plus the Figma coral glow; this replaces the "grey-box only" rule above. Button orange `#d04200` and muted text `#6e6b62` for WCAG AA. Font: Geist. Sentence case.
 - **Signal kinds use one pastel each** in chips: claim lavender, link blue, code peach, partnership gold, mention mint.
@@ -282,7 +294,8 @@ The user works on both a Windows PC (`D:\projects\Breadcrumb`) and a Mac (cloned
 - **Wrong URLs show a 404** (`/Reels`, `/reel`). A forgiving redirect to `/reels` has been offered but not built.
 - **Home-screen icon** is generic.
 - **The user is redesigning the widget** (states, glow, peek card, interaction) and will share it next. Keep everything in `lib/` stable.
-- **Not built yet**: dev panel (chip style A/B, swipe-to-scan mode), real thread page, start-a-thread, add-a-review, onboarding.
+- **Not built yet**: dev panel (chip style A/B, swipe-to-scan mode), start-a-thread, onboarding.
+- **Next design pass**: `/impeccable polish` on the thread page after the user has seen it on their iPhone.
 
 ### Next step
 

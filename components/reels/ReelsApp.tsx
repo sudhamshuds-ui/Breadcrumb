@@ -31,6 +31,7 @@ const SHEET_TOP_RATIO = 0.4;
 const SETTLE_MS = 260;
 const HAS_SCROLLEND = typeof window !== "undefined" && "onscrollend" in window;
 const ENABLED_KEY = "crumb.enabled";
+const FROM_REELS_KEY = "breadcrumb.threadFromReels"; // shared with ThreadView
 
 interface Burst {
   id: number;
@@ -128,6 +129,21 @@ export function ReelsApp() {
 
   // The chip rides along with its reel while swiping instead of fading out.
   const chipY = useMotionValue(0);
+
+  // ---- back from a thread: forget it --------------------------------------
+  // After going back, the browser still holds the thread as the "forward"
+  // page, and on iPhone a swipe in from the right edge (e.g. pulling the
+  // Crumb handle) goes forward and reopens it. Adding a fresh entry for this
+  // page wipes that forward page.
+  useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem(FROM_REELS_KEY) !== "1") return;
+      window.sessionStorage.removeItem(FROM_REELS_KEY);
+    } catch {
+      return;
+    }
+    window.history.pushState(window.history.state, "", window.location.href);
+  }, []);
 
   // ---- persistence: remember if Crumb was turned off ----------------------
   useEffect(() => {
@@ -372,7 +388,14 @@ export function ReelsApp() {
 
   // ---- navigation to the Breadcrumb thread --------------------------------
   const openThread = () => {
-    const back = `from=${reel.id}&t=${t.toFixed(1)}`;
+    const at = t.toFixed(1);
+    // Save where we are in this page's own history entry, so coming back
+    // (button or the phone's back swipe) lands on the same reel and moment.
+    window.history.replaceState(window.history.state, "", `/reels?reel=${reel.id}&t=${at}`);
+    try {
+      window.sessionStorage.setItem(FROM_REELS_KEY, "1");
+    } catch {}
+    const back = `from=${reel.id}&t=${at}`;
     router.push(reel.threadId ? `/thread/${reel.threadId}?${back}` : `/thread/new?${back}`);
   };
 

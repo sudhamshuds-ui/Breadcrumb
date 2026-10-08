@@ -1,12 +1,12 @@
 // Profile pictures. The tester ("you") has a fixed picture; everyone else
 // (friends, commenters, reviewers) gets a stock portrait from
-// public/avatars/stock-01.jpg … stock-24.jpg (randomuser.me). Odd numbers are
-// women, even numbers men. Each known person has their own face, the same
+// public/avatars/stock-01.jpg … stock-32.jpg (randomuser.me). 01-24: odd
+// numbers are women, even numbers men; 25-32 are assigned by name below. Each known person has their own face, the same
 // everywhere they appear.
 
 export const MY_AVATAR = "/avatars/me.jpg";
 
-const STOCK_COUNT = 24;
+const STOCK_COUNT = 32;
 
 const ASSIGNED: Record<string, number> = {
   // Friends (share sheet, thread reviews)
@@ -34,6 +34,16 @@ const ASSIGNED: Record<string, number> = {
   "sana.herbs": 21,
   "_brose.guini": 22,
   "louis.hu.design": 24,
+  // Thread reviewers and discussion
+  "mel.chen": 23,
+  "nat.w": 25,
+  liam: 26,
+  "sarah.j.runs": 27,
+  "kev.on.the.tools": 28,
+  "dr.anika.r": 29,
+  "greens.and.gains": 30,
+  "renee.eats": 31,
+  "lifts.and.lattes": 32,
 };
 
 export function avatarFor(name: string): string {
