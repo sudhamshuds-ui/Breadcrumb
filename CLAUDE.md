@@ -237,6 +237,52 @@ When rebuilding UI from Figma: "Keep everything in `lib/` untouched."
 
 ---
 
+## Current status (updated 2026-10-08)
+
+Live: https://breadcrumb-mocha.vercel.app/reels (auto-deploys from `main` on GitHub `sudhamshuds-ui/Breadcrumb`, private repo, public link). Pushes update the same link; teammates never need a new one.
+
+### What's built
+
+- **Mock reels feed** (`/reels`): 3 fictional reels (hormone kit, gut supplement, GP control) as scripted scenes with synced auto-captions. Native CSS snap scrolling with a "settle" safety net that glides to the nearest reel if iOS leaves it mid-way. Tap pauses, double-tap likes, hold pauses while held, mouse drag/wheel/arrow keys on desktop. Only the current reel and its neighbours are drawn.
+- **Crumb overlay**, following the Figma flow: tucked sliver → scanning → signals found → pulled out → toggle pill (Hide · Pause · Turn off · Breadcrumb). Chip summarises signals ("Discount code +1 · 2 claims"); tapping it morphs into the peek card (money, evidence, community, friends, "See the thread"). Caption sheet highlights flagged phrases by signal kind.
+- **Three-phase glow** (`CrumbGlow`): cool pastel aura + radar sweep while scanning; pull-in "thinking" and coral ripple "responding" on each new signal; warm breathing for 3 cycles then still. Review board at `/states`.
+- **Thread page**: placeholder only (`/thread/[id]`), with deep link back to the same reel and time.
+- **Logic in `lib/`**: types, seed reels/threads, `crumb-machine.ts` (incl. `CAPTION_OPENED`), `playback.ts`, `use-reel-clock.ts`, `storage.ts`.
+- **Real-phone layout**: fake status bar and home indicator only inside the desktop frame; safe-area insets; full-screen sizing in home-screen mode.
+
+### Decisions made
+
+- **Visual design** now follows `DESIGN.md` (Cursor tokens: cream `#f7f7f4`, warm ink, hairlines, no shadows) plus the Figma coral glow. This replaces the earlier "grey-box only" rule above.
+  - Deviations: button orange darkened to `#d04200` and muted text to `#6e6b62` to pass WCAG AA.
+  - Font: Geist instead of CursorGothic.
+  - Sentence case kept over Cursor's all-caps labels.
+- **Signal kinds use one pastel each**, everywhere: claim lavender, link blue, code peach, partnership gold.
+- **Corner system**: controls are full pills; cards are 28 outer / 22 core ("glass tray" double bezel); nested panels are 16.
+- **Wording**: neutral and hedged ("no disclosure seen", "Linked sources don't support them yet", "14 reviews, 5 positive").
+- **Motion**: no endless decorative loops. Crumb does not fade during swipes, only during hold-to-pause.
+- **Planned 5-reel lineup**: 3 flagged + 2 clean, where clean reels stay completely quiet (no "all clear" badge).
+- **Tailwind via `@tailwindcss/postcss`**: the Turbopack loader didn't hot-reload CSS.
+- **GSD Core is not installed**: too heavy and adds always-on hooks. Design skills installed in `.claude/skills/`: ui-ux-pro-max, impeccable, plus the taste skills.
+
+### Open issues
+
+- **Uncommitted fixes**, not yet tested on an iPhone:
+  - Crumb drag no longer triggers pill menu actions: the iOS ghost tap opened "Breadcrumb".
+  - Crumb no longer fades on every swipe.
+- **Needs iPhone confirmation**: the snap safety net and the home-screen full-screen sizing (bottom nav sat ~60pt too high).
+- **Wrong URLs show a 404** (`/Reels`, `/reel`). A forgiving redirect to `/reels` has been offered but not built.
+- **Home-screen icon** is generic; no Crumb app icon yet.
+- **Dev server noise**: it logs a harmless "Could not validate `instant`" error for the `/` redirect.
+- **Reels are scripted scenes**: real `.mp4` clips plus transcripts are still to come from the user.
+- **Not built yet**: dev panel (chip style A/B, swipe-to-scan mode), real thread page, start-a-thread, add-a-review, onboarding.
+
+### Next step
+
+1. Commit and push the two uncommitted Crumb fixes, then verify on the iPhone: drag-to-reveal, snap, bottom nav position.
+2. Then the 5-reel lineup once the user sends the videos and transcripts. Run transcripts through the appendix prompt, show the user the flag list, then build.
+
+---
+
 ## Appendix: signal extraction prompt
 
 Use this offline to turn each reel's transcript into signal data. Paste the transcript (with word timestamps) and caption into Claude with this prompt, then copy the JSON into `lib/data/reels.ts`.

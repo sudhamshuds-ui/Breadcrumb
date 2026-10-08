@@ -481,7 +481,8 @@ export function ReelsApp() {
         onSeeThread={openThread}
       />
 
-      <motion.div animate={{ opacity: holding || swiping ? 0.4 : 1 }}>
+      {/* Crumb stays solid while scrolling; it only dims with the hold-to-pause */}
+      <motion.div animate={{ opacity: holding ? 0.4 : 1 }}>
         <CrumbHandle
           status={crumb.status}
           revealed={crumb.revealed}

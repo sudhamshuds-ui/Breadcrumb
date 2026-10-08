@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import {
   AnimatePresence,
   animate,
@@ -38,6 +38,9 @@ export function CrumbHandle(props: Props) {
   const { status, revealed, menuOpen, top } = props;
   const reduce = useReducedMotion();
   const x = useMotionValue(revealed ? 0 : TUCK_X);
+  // iOS often fires a "tap" at the end of a drag. Ignore taps right after one,
+  // or pulling Crumb out would also open (and act on) the menu.
+  const justDragged = useRef(false);
 
   useEffect(() => {
     animate(x, revealed ? 0 : TUCK_X, reduce ? { duration: 0.15 } : SPRING);
@@ -62,7 +65,9 @@ export function CrumbHandle(props: Props) {
           dragConstraints={{ left: 0, right: TUCK_X }}
           dragElastic={0.18}
           dragMomentum={false}
+          onDragStart={() => (justDragged.current = true)}
           onDragEnd={(_, info) => {
+            setTimeout(() => (justDragged.current = false), 350);
             const pos = x.get();
             const open =
               info.velocity.x < -250 ? true : info.velocity.x > 250 ? false : pos < TUCK_X / 2;
@@ -71,7 +76,11 @@ export function CrumbHandle(props: Props) {
             if (open && !revealed) props.onReveal();
             if (!open && revealed) props.onTuck();
           }}
-          onTap={() => (revealed ? props.onToggleMenu() : props.onReveal())}
+          onTap={() => {
+            if (justDragged.current) return;
+            if (revealed) props.onToggleMenu();
+            else props.onReveal();
+          }}
           whileTap={menuOpen ? undefined : { scale: 0.94 }}
           // Keyboard and single-tap alternative to the drag gesture
           tabIndex={0}
@@ -138,12 +147,22 @@ export function CrumbHandle(props: Props) {
 }
 
 function MenuItem({ label, icon, onSelect }: { label: string; icon: React.ReactNode; onSelect: () => void }) {
+  // Only act on a press that started on this option. A finger that lands
+  // elsewhere (e.g. mid-drag) and lifts over it must not trigger it.
+  const pressed = useRef(false);
   return (
     <button
       type="button"
-      onPointerDown={(e) => e.stopPropagation()}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+        pressed.current = true;
+      }}
+      onPointerCancel={() => (pressed.current = false)}
       onClick={(e) => {
         e.stopPropagation();
+        const fromKeyboard = e.detail === 0;
+        if (!pressed.current && !fromKeyboard) return;
+        pressed.current = false;
         onSelect();
       }}
       className="crumb-type flex w-[54px] flex-col items-center justify-center gap-1 rounded-full text-crumb-ink active:bg-crumb-hairline"
