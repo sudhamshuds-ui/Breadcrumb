@@ -114,7 +114,9 @@ export function crumbReducer(state: CrumbState, event: CrumbEvent): CrumbState {
 
     case "TURN_ON":
       // Coming back always brings the plain widget, never a chip: what was
-      // already said in this reel counts as found, quietly, behind the badge.
+      // already said in this reel counts as found, quietly, behind the badge,
+      // and it starts with a breather, so a flag due right now waits its turn
+      // instead of stretching the widget while it slides back in.
       if (state.status !== "off") return state;
       return {
         ...state,
@@ -122,7 +124,7 @@ export function crumbReducer(state: CrumbState, event: CrumbEvent): CrumbState {
         found: event.alreadySaid,
         announcing: null,
         queue: [],
-        resting: false,
+        resting: true,
         open: false,
       };
 

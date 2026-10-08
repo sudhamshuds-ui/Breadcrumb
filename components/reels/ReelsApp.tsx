@@ -410,6 +410,13 @@ export function ReelsApp() {
     return () => window.removeEventListener("keydown", onKey);
   }, [blocked, scrollToIndex]);
 
+  // ---- bring Crumb back: always the plain widget first -------------------
+  const turnOn = () => {
+    // A just-for-fun aside whose moment has passed counts as shown.
+    if (reel.aside && t >= reel.aside.at) asideShown.current = true;
+    dispatch({ type: "TURN_ON", alreadySaid: dueSignals(reel.signals, t).map((s) => s.id) });
+  };
+
   // ---- a reel ends: move on to the next one, like the real app -------------
   // If a sheet or the peek card is open, play it again instead of moving the
   // feed out from under the tester.
@@ -610,7 +617,7 @@ export function ReelsApp() {
       <StatusBar
         crumbStatus={crumb.status}
         onIslandTap={() => {
-          if (crumb.status === "off") dispatch({ type: "TURN_ON", alreadySaid: dueSignals(reel.signals, t).map((s) => s.id) });
+          if (crumb.status === "off") turnOn();
         }}
       />
       <BottomNav />
@@ -670,7 +677,7 @@ export function ReelsApp() {
           setToast("off");
         }}
         onTurnOn={() => {
-          dispatch({ type: "TURN_ON", alreadySaid: dueSignals(reel.signals, t).map((s) => s.id) });
+          turnOn();
           setToast(null);
         }}
         onSeeThread={openThread}
@@ -682,21 +689,22 @@ export function ReelsApp() {
           <motion.div
             key={toast}
             data-interactive
-            className="crumb-type absolute inset-x-3.5 z-40 flex h-12 items-center justify-between rounded-full border border-crumb-hairline-strong bg-crumb-surface pl-5 pr-1.5 text-crumb-ink"
+            className="crumb-type absolute inset-x-3 z-40 flex items-center justify-between gap-3 rounded-[22px] bg-white py-2.5 pr-2 pl-4 text-crumb-ink"
             style={{ bottom: WIDGET_BOTTOM + 70 }}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             transition={{ duration: 0.24 }}
           >
-            <span className="text-[14px] font-medium tracking-tight">
-              Crumb is off. Swipe the tab to bring it back.
+            <span className="min-w-0 leading-tight">
+              <span className="block text-[14.5px] font-medium">Crumb is off</span>
+              <span className="mt-0.5 block text-[13px] text-crumb-muted">Swipe the tab on the left to bring it back</span>
             </span>
             <button
               type="button"
-              className="h-9 rounded-full px-3.5 text-[14px] font-medium text-crumb-accent active:bg-crumb-hairline"
+              className="h-10 shrink-0 rounded-full bg-crumb-ink px-4 text-[14px] font-medium whitespace-nowrap text-white active:opacity-85"
               onClick={() => {
-                dispatch({ type: "TURN_ON", alreadySaid: dueSignals(reel.signals, t).map((s) => s.id) });
+                turnOn();
                 setToast(null);
               }}
             >
