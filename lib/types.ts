@@ -53,7 +53,7 @@ export interface Comment {
 
 export interface Reel {
   id: string;
-  creator: { handle: string; name: string; initials: string; ring: [string, string] };
+  creator: { handle: string; name: string; initials: string; ring: [string, string]; avatar: string };
   src: string; // /reels/xxx.mp4
   poster: string; // first frame, shown while the video loads
   tier: ReelTier;

@@ -237,49 +237,55 @@ When rebuilding UI from Figma: "Keep everything in `lib/` untouched."
 
 ---
 
-## Current status (updated 2026-10-08)
+## Current status (updated 2026-10-08, evening)
 
 Live: https://breadcrumb-mocha.vercel.app/reels (auto-deploys from `main` on GitHub `sudhamshuds-ui/Breadcrumb`, private repo, public link). Pushes update the same link; teammates never need a new one.
 
+The user works on both a Windows PC (`D:\projects\Breadcrumb`) and a Mac (cloned from GitHub). Always `git pull` before starting and push when done. Claude's auto-memory does not sync between machines, so anything worth remembering belongs in this file.
+
 ### What's built
 
-- **Mock reels feed** (`/reels`): 3 fictional reels (hormone kit, gut supplement, GP control) as scripted scenes with synced auto-captions. Native CSS snap scrolling with a "settle" safety net that glides to the nearest reel if iOS leaves it mid-way. Tap pauses, double-tap likes, hold pauses while held, mouse drag/wheel/arrow keys on desktop. Only the current reel and its neighbours are drawn.
-- **Crumb overlay**, following the Figma flow: tucked sliver → scanning → signals found → pulled out → toggle pill (Hide · Pause · Turn off · Breadcrumb). Chip summarises signals ("Discount code +1 · 2 claims"); tapping it morphs into the peek card (money, evidence, community, friends, "See the thread"). Caption sheet highlights flagged phrases by signal kind.
-- **Three-phase glow** (`CrumbGlow`): cool pastel aura + radar sweep while scanning; pull-in "thinking" and coral ripple "responding" on each new signal; warm breathing for 3 cycles then still. Review board at `/states`.
-- **Thread page**: placeholder only (`/thread/[id]`), with deep link back to the same reel and time.
-- **Logic in `lib/`**: types, seed reels/threads, `crumb-machine.ts` (incl. `CAPTION_OPENED`), `playback.ts`, `use-reel-clock.ts`, `storage.ts`.
-- **Real-phone layout**: fake status bar and home indicator only inside the desktop frame; safe-area insets; full-screen sizing in home-screen mode.
+- **Real 5-reel feed** (`/reels`), replacing the scripted scenes and the "Seed content" section above. Order 1, 3, 2, 4, 5 so two flagged reels never sit back to back:
+  | id | Clip | Tier | Crumb shows |
+  |---|---|---|---|
+  | r1 | Weight-loss telehealth (Felix) | flag | Paid partnership · weight-loss medication · price offer |
+  | r3 | Diet Coke stand-up joke | quiet | Nothing at all |
+  | r2 | Broc Shot supplement, psoriasis | flag | Paid partnership · endorsement claim · skin results claim |
+  | r4 | 4-supplement stack + coaching DMs | facts | 2 claims stated · coaching offer |
+  | r5 | Co-Biotics brand's own ad | facts | 1 claim stated · brand's own ad |
+- **Tiers** live in `Reel.tier` (`flag` = full glow + chip; `facts` = calm chip worded "stated", no warm glow; `quiet` = silent). The widget redesign should restyle by tier, not by reel.
+- **Real people policy:** the clips are real downloaded reels, but every creator name, handle, stat and comment is fictional (user's decision). Brand names appear only where the video says them. Creator avatars are face crops from their own video. Reel 2 shows a very famous celebrity; testers will recognise her.
+- **Signal timing** was estimated from the transcripts (`public/reels/reel-0N.txt`) and spot-checked against burned-in captions for r1 and r4. r2 and r5 have no burned-in captions, so their chips may be a second or two off.
+- **Video playback** (`components/reels/ReelVideo.tsx`, `lib/use-reel-clock.ts`): every reel stays mounted; only the visible one plays. Crumb reads the video's own `currentTime`. Reels start muted (iPhones always allow that); the first tap anywhere turns sound on instead of pausing. Each reel has a first-frame poster (`reel-0N.jpg`) and neighbours are warmed up (muted play then pause) so swiping never flashes black.
+- **Caption sheet**: flagged phrases are gradient-filled text (two hues per signal kind, flows 3 times then rests, selected phrase keeps flowing) with a soft drop-shadow glow. Brighter than the chip pastels on purpose, for contrast on the dark sheet.
+- **Share sheet** (`ShareSheet.tsx`): Instagram-style; tick fictional friends then Send ("Sent to Tom"), Copy link, Share to… (the phone's real share menu), Add to story (pretend).
+- **Profile pictures** (`lib/avatars.ts`): the user's sketch is "you" (`public/avatars/me.jpg`); friends and commenters each have a fixed stock portrait (`stock-01..24.jpg`, randomuser.me; odd = women, even = men).
+- **Crumb overlay** (Figma flow): tucked sliver, scanning, signals, pulled out, toggle pill. Chip morphs into the peek card. Three-phase glow (`CrumbGlow`). Review board at `/states`.
+- **Phone shell**: floating see-through nav pill (no blur, it made swiping stutter), creator row and progress line spaced like Instagram, 9:41 fake status bar in the desktop frame only.
+- **Thread page**: placeholder only (`/thread/[id]`), with a deep link back to the same reel and time. Threads exist for r1, r2, r4, r5 with fictional friend reviews and healthdirect sources.
 
 ### Decisions made
 
-- **Visual design** now follows `DESIGN.md` (Cursor tokens: cream `#f7f7f4`, warm ink, hairlines, no shadows) plus the Figma coral glow. This replaces the earlier "grey-box only" rule above.
-  - Deviations: button orange darkened to `#d04200` and muted text to `#6e6b62` to pass WCAG AA.
-  - Font: Geist instead of CursorGothic.
-  - Sentence case kept over Cursor's all-caps labels.
-- **Signal kinds use one pastel each**, everywhere: claim lavender, link blue, code peach, partnership gold.
-- **Corner system**: controls are full pills; cards are 28 outer / 22 core ("glass tray" double bezel); nested panels are 16.
-- **Wording**: neutral and hedged ("no disclosure seen", "Linked sources don't support them yet", "14 reviews, 5 positive").
-- **Motion**: no endless decorative loops. Crumb does not fade during swipes, only during hold-to-pause.
-- **Planned 5-reel lineup**: 3 flagged + 2 clean, where clean reels stay completely quiet (no "all clear" badge).
+- **Visual design** follows `DESIGN.md` (Cursor tokens: cream `#f7f7f4`, warm ink, hairlines, no shadows) plus the Figma coral glow; this replaces the "grey-box only" rule above. Button orange `#d04200` and muted text `#6e6b62` for WCAG AA. Font: Geist. Sentence case.
+- **Signal kinds use one pastel each** in chips: claim lavender, link blue, code peach, partnership gold, mention mint.
+- **Corners**: controls are full pills; cards 28 outer / 22 core; nested panels 16.
+- **Wording**: neutral and hedged ("no disclosure seen", "Linked sources don't support them yet").
+- **Motion**: no endless decorative loops (the caption gradient flows 3 times, then rests).
+- **Videos must be H.264 MP4 at original quality.** A VP9 export played in desktop Chrome but was blank on iPhone, and heavy compression (RF 28) looked too poor. Before pushing any new video, check for `avc1` (not `vp09`/`hev1`) and the moov box before mdat. Every reel needs a poster still.
 - **Tailwind via `@tailwindcss/postcss`**: the Turbopack loader didn't hot-reload CSS.
-- **GSD Core is not installed**: too heavy and adds always-on hooks. Design skills installed in `.claude/skills/`: ui-ux-pro-max, impeccable, plus the taste skills.
+- **Testing in Claude's browser pane**: ask the user to open the pane before visual checks. A hidden pane stops the dev build from loading, freezes animations and crops screenshots. Fallback: the `prod` launch config (`next start` on port 3001) loads even when hidden.
 
 ### Open issues
 
-- **Uncommitted fixes**, not yet tested on an iPhone:
-  - Crumb drag no longer triggers pill menu actions: the iOS ghost tap opened "Breadcrumb".
-  - Crumb no longer fades on every swipe.
-- **Needs iPhone confirmation**: the snap safety net and the home-screen full-screen sizing (bottom nav sat ~60pt too high).
+- **Home-screen mode on iPhone**: iOS opens the app in a window short by the status bar height (black strip under the nav) until the page is pulled down once. An automatic retry nudge is in `PhoneFrame.tsx` but doesn't fix it. Workaround for testing: open in Safari, or pull down once per session.
 - **Wrong URLs show a 404** (`/Reels`, `/reel`). A forgiving redirect to `/reels` has been offered but not built.
-- **Home-screen icon** is generic; no Crumb app icon yet.
-- **Dev server noise**: it logs a harmless "Could not validate `instant`" error for the `/` redirect.
-- **Reels are scripted scenes**: real `.mp4` clips plus transcripts are still to come from the user.
+- **Home-screen icon** is generic.
+- **The user is redesigning the widget** (states, glow, peek card, interaction) and will share it next. Keep everything in `lib/` stable.
 - **Not built yet**: dev panel (chip style A/B, swipe-to-scan mode), real thread page, start-a-thread, add-a-review, onboarding.
 
 ### Next step
 
-1. Commit and push the two uncommitted Crumb fixes, then verify on the iPhone: drag-to-reveal, snap, bottom nav position.
-2. Then the 5-reel lineup once the user sends the videos and transcripts. Run transcripts through the appendix prompt, show the user the flag list, then build.
+Wait for the widget redesign from the user, then rebuild the Crumb components to match it, keeping `lib/` untouched.
 
 ---
 

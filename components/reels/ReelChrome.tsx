@@ -115,12 +115,13 @@ export function Avatar({ reel, size }: { reel: Reel; size: number }) {
         background: `linear-gradient(135deg, ${reel.creator.ring[0]}, ${reel.creator.ring[1]})`,
       }}
     >
-      <span
-        className="flex size-full items-center justify-center rounded-full border-2 border-black text-[11px] font-bold text-white"
-        style={{ background: `linear-gradient(160deg, ${reel.theme.to}, ${reel.theme.from})` }}
-      >
-        {reel.creator.initials}
-      </span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={reel.creator.avatar}
+        alt=""
+        className="size-full rounded-full border-2 border-black object-cover"
+        style={{ background: reel.theme.from }}
+      />
     </span>
   );
 }

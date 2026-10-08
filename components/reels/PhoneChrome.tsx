@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { Camera, ChevronDown, Clapperboard, House, Search, Send } from "lucide-react";
 import type { CrumbStatus } from "@/lib/crumb-machine";
 import { CrumbGlyph } from "@/components/crumb/CrumbGlyph";
+import { MY_AVATAR } from "@/lib/avatars";
 
 export function StatusBar({ crumbStatus, onIslandTap }: { crumbStatus: CrumbStatus; onIslandTap: () => void }) {
   const on = crumbStatus !== "off";
@@ -93,7 +94,8 @@ export function BottomNav() {
         <NavIcon><Send size={22} strokeWidth={1.9} /></NavIcon>
         <NavIcon><Search size={23} strokeWidth={1.9} /></NavIcon>
         <NavIcon>
-          <span className="size-[25px] rounded-full bg-gradient-to-br from-[#C9B79C] to-[#6E5A44] ring-2 ring-white/90" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={MY_AVATAR} alt="Your profile" className="size-[25px] rounded-full object-cover ring-2 ring-white/90" />
         </NavIcon>
       </nav>
     </div>

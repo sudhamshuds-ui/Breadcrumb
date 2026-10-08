@@ -12,7 +12,7 @@ const IG_RING: [string, string] = ["#F58529", "#DD2A7B"];
 export const reels: Reel[] = [
   {
     id: "r1",
-    creator: { handle: "claire.halfway.there", name: "Claire Dunn", initials: "CD", ring: IG_RING },
+    creator: { handle: "claire.halfway.there", name: "Claire Dunn", initials: "CD", ring: IG_RING, avatar: "/avatars/creator-r1.jpg" },
     src: "/reels/reel-01.mp4",
     poster: "/reels/reel-01.jpg",
     tier: "flag",
@@ -73,7 +73,7 @@ export const reels: Reel[] = [
   },
   {
     id: "r3",
-    creator: { handle: "ollie.tells.jokes", name: "Ollie Grant", initials: "OG", ring: IG_RING },
+    creator: { handle: "ollie.tells.jokes", name: "Ollie Grant", initials: "OG", ring: IG_RING, avatar: "/avatars/creator-r3.jpg" },
     src: "/reels/reel-03.mp4",
     poster: "/reels/reel-03.jpg",
     tier: "quiet",
@@ -101,7 +101,7 @@ export const reels: Reel[] = [
   },
   {
     id: "r2",
-    creator: { handle: "maya.skin.journal", name: "Maya Ortiz", initials: "MO", ring: IG_RING },
+    creator: { handle: "maya.skin.journal", name: "Maya Ortiz", initials: "MO", ring: IG_RING, avatar: "/avatars/creator-r2.jpg" },
     src: "/reels/reel-02.mp4",
     poster: "/reels/reel-02.jpg",
     tier: "flag",
@@ -155,7 +155,7 @@ export const reels: Reel[] = [
   },
   {
     id: "r4",
-    creator: { handle: "jordan.lifts.daily", name: "Jordan Hale", initials: "JH", ring: IG_RING },
+    creator: { handle: "jordan.lifts.daily", name: "Jordan Hale", initials: "JH", ring: IG_RING, avatar: "/avatars/creator-r4.jpg" },
     src: "/reels/reel-04.mp4",
     poster: "/reels/reel-04.jpg",
     tier: "facts",
@@ -220,7 +220,7 @@ export const reels: Reel[] = [
   },
   {
     id: "r5",
-    creator: { handle: "cobiotics", name: "Sponsored", initials: "CB", ring: IG_RING },
+    creator: { handle: "cobiotics", name: "Sponsored", initials: "CB", ring: IG_RING, avatar: "/avatars/creator-r5.jpg" },
     src: "/reels/reel-05.mp4",
     poster: "/reels/reel-05.jpg",
     tier: "facts",

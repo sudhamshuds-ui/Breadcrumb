@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Check, CirclePlus, Link2, Search, Share } from "lucide-react";
 import type { Reel } from "@/lib/types";
+import { avatarFor } from "@/lib/avatars";
 
 // Fictional friends, the same people who appear in Breadcrumb threads.
 const FRIENDS = [
@@ -119,12 +120,13 @@ export function ShareSheet({ open, reel, onClose, onNotice }: Props) {
                     className="flex flex-col items-center gap-1.5"
                   >
                     <span className="relative">
-                      <span
-                        className="flex size-[62px] items-center justify-center rounded-full text-[20px] font-semibold text-black/70"
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={avatarFor(f.name)}
+                        alt=""
+                        className="size-[62px] rounded-full object-cover"
                         style={{ background: f.tint }}
-                      >
-                        {f.name[0]}
-                      </span>
+                      />
                       <AnimatePresence>
                         {on && (
                           <motion.span

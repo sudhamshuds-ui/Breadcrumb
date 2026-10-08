@@ -8,6 +8,7 @@ import { captionParts, moneyTag } from "@/lib/playback";
 import { CrumbGlyph } from "@/components/crumb/CrumbGlyph";
 import { KindBadge } from "@/components/crumb/SignalIcon";
 import { Avatar } from "./ReelChrome";
+import { MY_AVATAR, avatarFor } from "@/lib/avatars";
 
 // Two neighbouring hues per signal kind, so the gradient moves between them
 // (like Gemini's wordmark). Brighter, more saturated cousins of the chip
@@ -151,7 +152,8 @@ export function CaptionSheet({ open, reel, top, signals, onClose, onOpenPeek }: 
             <div className="mt-4 border-t border-white/10 pt-4">
               {reel.comments.map((c) => (
                 <div key={c.author + c.text} className="mb-4 flex gap-3">
-                  <span className="size-8 shrink-0 rounded-full bg-gradient-to-br from-white/30 to-white/5" />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={avatarFor(c.author)} alt="" className="size-8 shrink-0 rounded-full bg-white/10 object-cover" />
                   <div className="min-w-0 flex-1 leading-snug">
                     <div className="text-[12.5px] text-white/60">
                       <span className="font-semibold text-white">{c.author}</span> {c.ago}
@@ -170,7 +172,8 @@ export function CaptionSheet({ open, reel, top, signals, onClose, onOpenPeek }: 
           </div>
 
           <div className="flex items-center gap-3 border-t border-white/10 px-4 pt-3 pb-7">
-            <span className="size-10 shrink-0 rounded-full bg-gradient-to-br from-[#C9B79C] to-[#6E5A44]" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={MY_AVATAR} alt="You" className="size-10 shrink-0 rounded-full object-cover" />
             <div className="flex h-11 flex-1 items-center rounded-full border border-white/20 px-4 text-[14px] text-white/45">
               What do you think of this?
               <span className="ml-auto flex gap-3 text-white/80">
