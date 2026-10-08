@@ -237,7 +237,7 @@ When rebuilding UI from Figma: "Keep everything in `lib/` untouched."
 
 ---
 
-## Current status (updated 2026-10-08, evening)
+## Current status (updated 2026-10-09)
 
 Live: https://breadcrumb-mocha.vercel.app/reels (auto-deploys from `main` on GitHub `sudhamshuds-ui/Breadcrumb`, private repo, public link). Pushes update the same link; teammates never need a new one.
 
@@ -260,6 +260,7 @@ The user works on both a Windows PC (`D:\projects\Breadcrumb`) and a Mac (cloned
 - **Caption sheet**: flagged phrases are gradient-filled text (two hues per signal kind, flows 3 times then rests, selected phrase keeps flowing) with a soft drop-shadow glow. Brighter than the chip pastels on purpose, for contrast on the dark sheet.
 - **Share sheet** (`ShareSheet.tsx`): Instagram-style; tick fictional friends then Send ("Sent to Tom"), Copy link, Share to… (the phone's real share menu), Add to story (pretend).
 - **Profile pictures** (`lib/avatars.ts`): the user's sketch is "you" (`public/avatars/me.jpg`); friends and commenters each have a fixed stock portrait (`stock-01..24.jpg`, randomuser.me; odd = women, even = men).
+- **Screen-edge glow (test)** (`components/crumb/EdgeGlow.tsx`): a Siri / Apple Intelligence style glow around the screen edges, only on `flag` reels. It blooms each time Crumb finds a new signal (reel 01 glows 3 times), flows around the border for about 5 seconds (0.6 s in, ~3.5 s flowing, ~1.2 s out), then fades. Colours: coral, peach, lavender, blue, pink, blended with `mix-blend-mode: screen` so it reads as light. The soft rounded ring is drawn once into a canvas image (corner radius 64, reaches 34 px in) and used as a mask; the flow is a rotating conic gradient underneath. No blur filters, and no clip of its own (the phone's screen rounds the outer corners). Switch it off with `?edgeglow=0` on the link, e.g. for A/B testing. The user approved the current look and timing.
 - **Crumb overlay** (Figma flow): tucked sliver, scanning, signals, pulled out, toggle pill. Chip morphs into the peek card. Three-phase glow (`CrumbGlow`). Review board at `/states`.
 - **Phone shell**: floating see-through nav pill (no blur, it made swiping stutter), creator row and progress line spaced like Instagram, 9:41 fake status bar in the desktop frame only.
 - **Thread page**: placeholder only (`/thread/[id]`), with a deep link back to the same reel and time. Threads exist for r1, r2, r4, r5 with fictional friend reviews and healthdirect sources.
