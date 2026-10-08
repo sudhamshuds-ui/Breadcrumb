@@ -81,7 +81,7 @@ export function CaptionSheet({ open, reel, top, signals, onClose, onOpenPeek }: 
               </motion.button>
             )}
 
-            <p className="mt-3 text-[15px] leading-[1.4] text-white/95">
+            <p className="mt-3 text-[15px] leading-[1.4] whitespace-pre-line text-white/95">
               {parts.map((p, i) =>
                 p.signal ? (
                   <button

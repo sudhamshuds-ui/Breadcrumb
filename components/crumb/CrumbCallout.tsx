@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion, type MotionValue } from "motion/react";
 import { ArrowUpRight, X } from "lucide-react";
-import type { Signal, SignalKind, Thread } from "@/lib/types";
+import type { ReelTier, Signal, SignalKind, Thread } from "@/lib/types";
 import { chipSummary, kindsInOrder, peekLines } from "@/lib/playback";
 import { CrumbGlyph } from "./CrumbGlyph";
 import { KindBadge, TRUST_TINT, TrustIcon } from "./SignalIcon";
@@ -14,6 +14,7 @@ import { KindBadge, TRUST_TINT, TrustIcon } from "./SignalIcon";
 
 interface Props {
   mode: "hidden" | "chip" | "peek";
+  tier: ReelTier;
   signals: Signal[];
   thread: Thread | undefined;
   bottom: number;
@@ -31,7 +32,7 @@ const EASE = [0.32, 0.72, 0, 1] as const;
 const SHELL = "crumb-glass bg-white/10 ring-1 ring-white/20 backdrop-blur-xl";
 const CORE_HIGHLIGHT = "inset 0 1px 1px rgba(255,255,255,0.7)";
 
-export function CrumbCallout({ mode, signals, thread, bottom, followY, onOpen, onClose, onSeeThread }: Props) {
+export function CrumbCallout({ mode, tier, signals, thread, bottom, followY, onOpen, onClose, onSeeThread }: Props) {
   const reduce = useReducedMotion();
   const layoutId = reduce ? undefined : "crumb-callout";
 
@@ -39,7 +40,7 @@ export function CrumbCallout({ mode, signals, thread, bottom, followY, onOpen, o
     <>
       {/* Screen readers hear what Crumb found as it updates, without moving focus */}
       <span role="status" aria-atomic="true" className="sr-only">
-        {mode !== "hidden" && signals.length > 0 ? `Crumb found: ${chipSummary(signals)}` : ""}
+        {mode !== "hidden" && signals.length > 0 ? `Crumb found: ${chipSummary(signals, tier)}` : ""}
       </span>
 
       {/* Tap outside to dismiss the peek card */}
@@ -75,7 +76,7 @@ export function CrumbCallout({ mode, signals, thread, bottom, followY, onOpen, o
             animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, transition: { duration: 0.15 } }}
             transition={{ duration: 0.26, ease: EASE }}
-            aria-label={`Crumb found: ${chipSummary(signals)}. Tap to see more.`}
+            aria-label={`Crumb found: ${chipSummary(signals, tier)}. Tap to see more.`}
           >
             <span
               className="flex h-11 min-w-0 items-center gap-2 rounded-[22px] bg-crumb-surface pl-2 pr-3.5 transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] group-active:scale-[0.98]"
@@ -83,7 +84,7 @@ export function CrumbCallout({ mode, signals, thread, bottom, followY, onOpen, o
             >
               <KindDots kinds={kindsInOrder(signals)} />
               <motion.span layout="position" className="truncate text-[13px] font-medium">
-                {chipSummary(signals)}
+                {chipSummary(signals, tier)}
               </motion.span>
             </span>
           </motion.button>

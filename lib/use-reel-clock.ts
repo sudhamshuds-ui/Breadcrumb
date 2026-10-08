@@ -1,43 +1,43 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useMotionValue, type MotionValue } from "motion/react";
 
-// A playback clock for scripted reels. `t` updates ~20 times a second for
-// captions and signals; `time` is a motion value for smooth visuals.
-export function useReelClock(duration: number, playing: boolean, initialTime = 0) {
-  const [t, setT] = useState(initialTime);
-  const tRef = useRef(initialTime);
-  const time: MotionValue<number> = useMotionValue(initialTime);
+// Reads the playing video's own clock, so Crumb stays in step even when the
+// video buffers, loops or is paused. `t` updates ~20 times a second for
+// signals; `time` is a motion value for smooth visuals like the progress bar.
+export function useReelClock(getVideo: () => HTMLVideoElement | null) {
+  const [t, setT] = useState(0);
+  const time: MotionValue<number> = useMotionValue(0);
 
   useEffect(() => {
-    if (!playing) return;
     let raf = 0;
-    let last = performance.now();
     let lastPublished = -1;
-    const tick = (now: number) => {
-      const dt = Math.min(0.1, (now - last) / 1000);
-      last = now;
-      tRef.current = (tRef.current + dt) % duration;
-      time.set(tRef.current);
-      const bucket = Math.floor(tRef.current * 20);
-      if (bucket !== lastPublished) {
-        lastPublished = bucket;
-        setT(tRef.current);
+    const tick = () => {
+      const v = getVideo();
+      if (v) {
+        const now = v.currentTime;
+        time.set(now);
+        const bucket = Math.floor(now * 20);
+        if (bucket !== lastPublished) {
+          lastPublished = bucket;
+          setT(now);
+        }
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [playing, duration, time]);
+  }, [getVideo, time]);
 
   const seek = useCallback(
     (s: number) => {
-      tRef.current = Math.max(0, Math.min(duration - 0.01, s));
-      time.set(tRef.current);
-      setT(tRef.current);
+      const v = getVideo();
+      if (v) v.currentTime = s;
+      time.set(s);
+      setT(s);
     },
-    [duration, time],
+    [getVideo, time],
   );
 
   return { t, time, seek };

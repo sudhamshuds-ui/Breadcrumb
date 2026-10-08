@@ -31,22 +31,11 @@ export interface TranscriptLine {
   text: string;
 }
 
-// A visual beat of the scripted reel. Lets us fake a "video" until real
-// clips are dropped into /public/reels.
-export interface SceneBeat {
-  start: number;
-  end: number;
-  kind: "hook" | "product" | "detail" | "code" | "talk";
-  title?: string;
-  subtitle?: string;
-}
-
-export interface ReelProduct {
-  brand: string;
-  name: string;
-  line: string;
-  shape: "box" | "jar" | "none";
-}
+// How strongly Crumb reacts to a reel:
+// - "flag": money or health signals worth a close look (full glow + chip)
+// - "facts": health-adjacent, worth knowing but not alarming (calm chip, no glow)
+// - "quiet": nothing to show; Crumb stays silent
+export type ReelTier = "flag" | "facts" | "quiet";
 
 export interface ReelTheme {
   from: string;
@@ -65,18 +54,17 @@ export interface Comment {
 export interface Reel {
   id: string;
   creator: { handle: string; name: string; initials: string; ring: [string, string] };
-  src: string | null; // /reels/xxx.mp4 once real footage exists
+  src: string; // /reels/xxx.mp4
   poster: string | null;
+  tier: ReelTier;
   caption: string;
   postedOn: string;
   audio: string;
   paidPartner: string | null; // platform "Paid partnership with ..." label
   durationSec: number;
   stats: { likes: string; comments: string; reposts: string; shares: string };
-  theme: ReelTheme;
-  product: ReelProduct;
-  transcript: TranscriptLine[];
-  beats: SceneBeat[];
+  theme: ReelTheme; // colours behind the video while it loads, and the avatar
+  transcript: TranscriptLine[]; // spoken audio, from the transcript files
   comments: Comment[];
   signals: Signal[];
   threadId: string | null; // null = no thread yet
@@ -104,6 +92,7 @@ export interface Thread {
   reelId: string;
   productName: string;
   trust: TrustSignals;
+  moneyNote?: string; // overrides the peek card's money line, e.g. a brand's own ad
   friendNames: string[];
   reviews: Review[];
   sources: Source[];

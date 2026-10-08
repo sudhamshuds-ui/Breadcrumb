@@ -25,6 +25,7 @@ interface Props {
   revealed: boolean;
   menuOpen: boolean;
   foundCount: number;
+  calm?: boolean; // "facts" reels: chip only, no warm glow
   top: number;
   onReveal: () => void;
   onTuck: () => void;
@@ -94,7 +95,7 @@ export function CrumbHandle(props: Props) {
           aria-expanded={revealed ? menuOpen : undefined}
           role="button"
         >
-          <CrumbGlow phase={glowing ? "found" : scanning ? "scanning" : "idle"} foundCount={props.foundCount} />
+          <CrumbGlow phase={glowing && !props.calm ? "found" : scanning ? "scanning" : "idle"} foundCount={props.foundCount} />
 
           {/* Toggle pill: grows left out of the widget */}
           <motion.div

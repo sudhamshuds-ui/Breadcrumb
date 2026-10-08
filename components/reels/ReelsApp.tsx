@@ -12,7 +12,7 @@ import { useReelClock } from "@/lib/use-reel-clock";
 import { readStore, writeStore } from "@/lib/storage";
 import { CrumbHandle } from "@/components/crumb/CrumbHandle";
 import { CrumbCallout } from "@/components/crumb/CrumbCallout";
-import { ReelScene } from "./ReelScene";
+import { ReelVideo } from "./ReelVideo";
 import { ReelChrome } from "./ReelChrome";
 import { CaptionSheet } from "./CaptionSheet";
 import { BottomNav, HomeIndicator, StatusBar, TopBar } from "./PhoneChrome";
@@ -46,7 +46,7 @@ export function ReelsApp() {
 
   const [index, setIndex] = useState(startIndex);
   const [crumb, dispatch] = useReducer(crumbReducer, undefined, () => initialCrumbState(true));
-  const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState(false); // sound on by default
   const [paused, setPaused] = useState(false);
   const [holding, setHolding] = useState(false);
   const [captionOpen, setCaptionOpen] = useState(false);
@@ -63,7 +63,41 @@ export function ReelsApp() {
   const thread = getThread(reel.threadId);
   const found = foundSignals(reel, crumb.found);
 
-  const { t, time, seek } = useReelClock(reel.durationSec, !holding && !paused, startTime);
+  // Every reel's <video>, so the clock can read whichever one is on screen.
+  const videos = useRef(new Map<string, HTMLVideoElement>());
+  const registerVideo = useCallback((id: string, el: HTMLVideoElement | null) => {
+    if (el) videos.current.set(id, el);
+    else videos.current.delete(id);
+  }, []);
+  const getActiveVideo = useCallback(() => videos.current.get(reels[indexRef.current].id) ?? null, []);
+  // The phone blocked sound before any tap: play muted, then switch sound on
+  // at the first tap (unless the tester muted it themselves).
+  const autoMuted = useRef(false);
+  const onAutoMuted = useCallback(() => {
+    autoMuted.current = true;
+    setMuted(true);
+  }, []);
+  useEffect(() => {
+    const unlock = () => {
+      if (!autoMuted.current) return;
+      autoMuted.current = false;
+      const v = getActiveVideo();
+      if (v) {
+        v.muted = false;
+        v.play().catch(() => {});
+      }
+      setMuted(false);
+    };
+    window.addEventListener("click", unlock);
+    window.addEventListener("touchend", unlock);
+    return () => {
+      window.removeEventListener("click", unlock);
+      window.removeEventListener("touchend", unlock);
+    };
+  }, [getActiveVideo]);
+  const playing = !holding && !paused;
+
+  const { t, time, seek } = useReelClock(getActiveVideo);
 
   // ---- frame size ---------------------------------------------------------
   useLayoutEffect(() => {
@@ -373,34 +407,36 @@ export function ReelsApp() {
           style={{ overflowY: blocked ? "hidden" : "scroll", touchAction: "pan-y" }}
         >
           {reels.map((r, i) => {
-            // Only the playing reel and its neighbours are drawn; the rest are
-            // plain black until you get close. Keeps the phone's GPU free.
+            // Every reel stays built so a swipe never waits; only the one on
+            // screen plays, and only it and its neighbours load ahead.
             const near = Math.abs(i - index) <= 1;
             return (
               <div key={r.id} className="relative snap-start snap-always" style={{ height: pageH }}>
-                {near && (
-                  <>
-                    <ReelScene
+                <>
+                  <ReelVideo
+                    reel={r}
+                    active={i === index}
+                    playing={playing}
+                    muted={muted}
+                    preload={near}
+                    startAt={i === startIndex ? startTime : 0}
+                    register={registerVideo}
+                    onAutoMuted={onAutoMuted}
+                  />
+                  <motion.div
+                    className="absolute inset-0"
+                    animate={{ opacity: captionOpen || holding ? 0 : 1 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ReelChrome
                       reel={r}
-                      t={i === index ? t : 0}
-                      time={i === index ? time : null}
-                      active={i === index}
+                      liked={Boolean(liked[r.id])}
+                      onToggleLike={toggleLike}
+                      onOpenCaption={openCaption}
+                      bottomInset={CHROME_BOTTOM}
                     />
-                    <motion.div
-                      className="absolute inset-0"
-                      animate={{ opacity: captionOpen || holding ? 0 : 1 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <ReelChrome
-                        reel={r}
-                        liked={Boolean(liked[r.id])}
-                        onToggleLike={toggleLike}
-                        onOpenCaption={openCaption}
-                        bottomInset={CHROME_BOTTOM}
-                      />
-                    </motion.div>
-                  </>
-                )}
+                  </motion.div>
+                </>
               </div>
             );
           })}
@@ -451,7 +487,14 @@ export function ReelsApp() {
           <motion.button
             type="button"
             data-interactive
-            onClick={() => setMuted((m) => !m)}
+            onClick={() => {
+              // Set it on the video right away: iPhones only allow sound when
+              // it's switched on during the tap itself.
+              autoMuted.current = false; // the tester chose, so don't override it
+              const v = getActiveVideo();
+              if (v) v.muted = !muted;
+              setMuted(!muted);
+            }}
             aria-label={muted ? "Turn sound on" : "Turn sound off"}
             className="absolute right-2 z-20 flex size-11 items-center justify-center text-white"
             style={{ top: "calc(var(--top-inset) + 46px)" }}
@@ -499,6 +542,7 @@ export function ReelsApp() {
       {/* ---- Crumb overlay ---- */}
       <CrumbCallout
         mode={calloutMode}
+        tier={reel.tier}
         signals={found}
         thread={thread}
         bottom={CHIP_BOTTOM}
@@ -515,6 +559,7 @@ export function ReelsApp() {
           revealed={crumb.revealed}
           menuOpen={crumb.menuOpen}
           foundCount={crumb.found.length}
+          calm={reel.tier !== "flag"}
           top={HANDLE_TOP}
           onReveal={() => dispatch({ type: "REVEAL" })}
           onTuck={() => dispatch({ type: "TUCK" })}

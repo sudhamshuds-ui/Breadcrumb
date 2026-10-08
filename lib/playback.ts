@@ -1,7 +1,7 @@
 // Syncs scripted reel data to the current playback time, and turns found
 // signals into the short text Crumb shows.
 
-import type { Reel, SceneBeat, Signal, SignalKind, Thread, TranscriptLine } from "@/lib/types";
+import type { Reel, ReelTier, Signal, SignalKind, Thread, TranscriptLine } from "@/lib/types";
 
 export function dueSignals(signals: Signal[], t: number): Signal[] {
   return signals.filter((s) => s.appearsAt <= t);
@@ -9,17 +9,6 @@ export function dueSignals(signals: Signal[], t: number): Signal[] {
 
 export function activeLine(transcript: TranscriptLine[], t: number): TranscriptLine | undefined {
   return transcript.find((l) => t >= l.start && t < l.end);
-}
-
-export function activeBeat(beats: SceneBeat[], t: number): SceneBeat | undefined {
-  return beats.find((b) => t >= b.start && t < b.end) ?? beats[beats.length - 1];
-}
-
-// Words of the active line revealed so far, for karaoke-style captions.
-export function wordsShown(line: TranscriptLine, t: number): number {
-  const words = line.text.split(" ");
-  const progress = (t - line.start) / Math.max(0.1, line.end - line.start);
-  return Math.min(words.length, Math.max(1, Math.ceil(progress * words.length * 1.15)));
 }
 
 export const MONEY_KINDS: SignalKind[] = ["discount_code", "affiliate_link", "paid_partnership"];
@@ -42,19 +31,23 @@ export function kindsInOrder(signals: Signal[]): SignalKind[] {
 }
 
 // Chip text, at most two parts: "Discount code · 2 claims".
-export function chipSummary(signals: Signal[]): string {
+// "facts" reels state things rather than flag them: "2 claims stated".
+export function chipSummary(signals: Signal[], tier: ReelTier = "flag"): string {
   const claims = signals.filter((s) => s.kind === "health_claim");
+  const others = signals.filter((s) => s.kind === "product_mention");
   const parts: string[] = [];
 
   const money = moneyTag(signals);
   if (money) parts.push(money);
   if (claims.length > 0) {
-    // Short when sharing the chip with a money signal, fuller when alone.
     const n = claims.length === 1 ? "1 claim" : `${claims.length} claims`;
-    parts.push(parts.length > 0 ? n : `${n} to check`);
+    if (tier === "facts") parts.push(`${n} stated`);
+    // Short when sharing the chip with a money signal, fuller when alone.
+    else parts.push(parts.length > 0 ? n : `${n} to check`);
   }
+  if (parts.length < 2 && others.length > 0) parts.push(others[0].label);
   if (parts.length === 0 && signals.length > 0) parts.push(signals[0].label);
-  return parts.join(" · ");
+  return parts.slice(0, 2).join(" · ");
 }
 
 // Money signals in a few words, led by the most telling one.
@@ -109,7 +102,9 @@ export function peekLines(signals: Signal[], thread: Thread | undefined): PeekLi
   const claims = signals.filter((s) => s.kind === "health_claim");
 
   let moneyLine = "No money signals found";
-  if (thread?.trust.money === "disclosed" || money.some((s) => s.kind === "paid_partnership")) {
+  if (thread?.moneyNote) {
+    moneyLine = thread.moneyNote;
+  } else if (thread?.trust.money === "disclosed" || money.some((s) => s.kind === "paid_partnership")) {
     moneyLine = "Paid partnership disclosed";
   } else if (money.length > 0) {
     const labels = money.map((s) => s.label.toLowerCase());
