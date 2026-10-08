@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Heart, ImageIcon, Smile } from "lucide-react";
+import { Heart, ImageIcon, Smile, X } from "lucide-react";
 import type { Reel, Signal } from "@/lib/types";
 import { captionParts } from "@/lib/playback";
 import { CrumbMini } from "@/components/crumb/CrumbWidget";
-import { inkStyle, KindBadge } from "@/components/crumb/SignalIcon";
+import { inkStyle, KindMark, useIconStyle } from "@/components/crumb/SignalIcon";
 import { Avatar } from "./ReelChrome";
 import { MY_AVATAR, avatarFor } from "@/lib/avatars";
 
@@ -23,6 +23,7 @@ interface Props {
 export function CaptionSheet({ open, reel, top, signals, onClose, onOpenPeek }: Props) {
   const reduce = useReducedMotion();
   const [selected, setSelected] = useState<Signal | null>(null);
+  const iconStyle = useIconStyle();
   const parts = captionParts(reel.caption, signals);
 
   return (
@@ -104,28 +105,6 @@ export function CaptionSheet({ open, reel, top, signals, onClose, onOpenPeek }: 
               )}
             </p>
 
-            {/* What Crumb noticed about a highlighted phrase */}
-            <AnimatePresence initial={false}>
-              {selected && (
-                <motion.div
-                  key={selected.id}
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.22 }}
-                  className="overflow-hidden"
-                >
-                  <div className="crumb-type mt-3 flex items-start gap-2.5 rounded-2xl border border-crumb-hairline-strong bg-crumb-surface p-3 text-crumb-ink">
-                    <KindBadge kind={selected.kind} size={28} />
-                    <span className="min-w-0 leading-tight">
-                      <span className="block text-[13px] font-medium">{selected.label}</span>
-                      <span className="mt-0.5 block text-[13px] text-crumb-muted">{selected.detail}</span>
-                    </span>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
             {signals.length > 0 && !selected && (
               <p className="mt-2 flex items-center gap-1.5 text-[12px] text-white/55">
                 Tap a highlight to see what Crumb found
@@ -155,6 +134,37 @@ export function CaptionSheet({ open, reel, top, signals, onClose, onOpenPeek }: 
               ))}
             </div>
           </div>
+
+          {/* What Crumb noticed about the tapped phrase: pinned above the comment
+              box so it's always in view, however long the caption is. */}
+          <AnimatePresence initial={false}>
+            {selected && (
+              <motion.div
+                key="selected-signal"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                transition={{ duration: 0.2 }}
+                className="px-4 pb-2"
+              >
+                <div className="crumb-type flex items-start gap-2.5 rounded-[20px] bg-white p-3 text-crumb-ink" role="status">
+                  <KindMark kind={selected.kind} style={iconStyle} size={30} />
+                  <span className="min-w-0 flex-1 leading-tight">
+                    <span className="block text-[14px] font-medium">{selected.label}</span>
+                    <span className="mt-0.5 block text-[13px] leading-snug text-crumb-body">{selected.detail}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelected(null)}
+                    aria-label="Close"
+                    className="-mt-1 -mr-1 flex size-8 shrink-0 items-center justify-center rounded-full text-crumb-muted active:bg-crumb-hairline"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <div className="flex items-center gap-3 border-t border-white/10 px-4 pt-3 pb-7">
             {/* eslint-disable-next-line @next/next/no-img-element */}
