@@ -18,7 +18,7 @@ function describe(el: Element | null): string {
   const t = tagged ?? el;
   const label =
     t.getAttribute("data-tutorial") ?? t.getAttribute("aria-label")?.slice(0, 22) ?? (t as HTMLElement).innerText?.slice(0, 16) ?? "";
-  return `${t.tagName.toLowerCase()}${label ? `"${label}"` : ""}`;
+  return `${t.tagName.toLowerCase()}${label ? `"${label.replace(/\s+/g, " ").trim()}"` : ""}`;
 }
 
 export function DebugHud() {

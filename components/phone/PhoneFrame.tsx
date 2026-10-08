@@ -19,8 +19,50 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
 
   // There used to be a "nudge" here for the home-screen black strip (scroll
   // the page 1px on every touch). It never fixed the strip, and on iPhone a
-  // scroll during a touch cancels the tap, so buttons like Crumb's widget
-  // stopped responding. Removed on purpose; see CLAUDE.md.
+  // scroll during a touch cancels the tap. Removed on purpose; see CLAUDE.md.
+
+  // Safety net: the page itself should never be scrolled (see globals.css).
+  // If iOS leaves it offset anyway (stuck after a pull, a bounce or a swipe
+  // back), the picture and the touch areas drift apart and taps miss. Put it
+  // back, but only once no finger is down: moving the page during a touch
+  // cancels the tap.
+  useEffect(() => {
+    let fingers = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const offset = () => window.scrollY !== 0 || Math.abs(window.visualViewport?.offsetTop ?? 0) > 0.5;
+    const settle = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if (fingers === 0 && offset()) window.scrollTo(0, 0);
+      }, 150);
+    };
+    const down = (e: TouchEvent) => {
+      fingers = e.touches.length;
+      clearTimeout(timer);
+    };
+    const up = (e: TouchEvent) => {
+      fingers = e.touches.length;
+      if (fingers === 0) settle();
+    };
+    settle();
+    window.addEventListener("touchstart", down, { passive: true, capture: true });
+    window.addEventListener("touchend", up, { passive: true, capture: true });
+    window.addEventListener("touchcancel", up, { passive: true, capture: true });
+    window.addEventListener("scroll", settle, { passive: true });
+    window.visualViewport?.addEventListener("scroll", settle);
+    window.visualViewport?.addEventListener("resize", settle);
+    window.addEventListener("pageshow", settle);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("touchstart", down, { capture: true });
+      window.removeEventListener("touchend", up, { capture: true });
+      window.removeEventListener("touchcancel", up, { capture: true });
+      window.removeEventListener("scroll", settle);
+      window.visualViewport?.removeEventListener("scroll", settle);
+      window.visualViewport?.removeEventListener("resize", settle);
+      window.removeEventListener("pageshow", settle);
+    };
+  }, []);
 
   return (
     <div className="flex min-h-dvh w-full items-center justify-center bg-[#2a2a2a] max-[499px]:bg-black">

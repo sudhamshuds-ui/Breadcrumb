@@ -192,6 +192,20 @@ body {
   background: #000;
 }
 
+/* On a phone, the page itself never scrolls or bounces: only the feed and the
+   thread scroll, inside their own boxes. If the whole page gets pulled down,
+   iOS home-screen apps can get stuck with the picture shifted but taps still
+   landing at the old spot (seen on-device: 116 pt off, so taps on Crumb's
+   widget hit the video behind it). */
+@media (max-width: 499px) {
+  html:has(.phone-ui),
+  html:has(.phone-ui) body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+}
+
 .phone-ui * {
   scrollbar-width: none;
 }
