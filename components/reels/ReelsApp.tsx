@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion, useTransform } from "motion/react";
-import { Heart, Play, Volume2, VolumeX } from "lucide-react";
+import { Heart, Play, RotateCw, Volume2, VolumeX } from "lucide-react";
 import { reels } from "@/lib/data/reels";
 import type { Reel } from "@/lib/types";
 import { getThread } from "@/lib/data/threads";
 import { ANNOUNCE_MS, LOOK_MS, REST_MS, crumbReducer, initialCrumbState, isListening, shownCount } from "@/lib/crumb-machine";
 import { dueSignals, foundSignals } from "@/lib/playback";
 import { useReelClock } from "@/lib/use-reel-clock";
+import { PULL_THRESHOLD, usePullToRefresh } from "@/lib/use-pull-to-refresh";
 import { readStore, writeStore } from "@/lib/storage";
 import {
   resumeStepAfterThread,
@@ -278,6 +279,21 @@ export function ReelsApp() {
     const id = setTimeout(() => setNotice(null), 2200);
     return () => clearTimeout(id);
   }, [notice]);
+
+  // ---- pull to refresh on the first reel ----------------------------------
+  // Reloads the feed from the start (the tutorial link keeps its tutorial).
+  // Also the only way to reload when the app is opened from the home screen.
+  const pullRefresh = usePullToRefresh({
+    enabled: index === 0 && !blocked,
+    getScroller: () => scrollerRef.current,
+    onRefresh: () => {
+      const keep = params.get("tutorial") === "1" ? "?tutorial=1" : "";
+      window.location.replace(`/reels${keep}`);
+    },
+  });
+  const pullY = useTransform(pullRefresh.pull, (v) => v - 44);
+  const pullOpacity = useTransform(pullRefresh.pull, [0, 24, PULL_THRESHOLD], [0, 0.5, 1]);
+  const pullTurn = useTransform(pullRefresh.pull, [0, PULL_THRESHOLD], [0, 300]);
 
   // ---- vertical feed: native snap scrolling, like the real app ------------
   // The browser does the swipe (momentum, snap, rubber-banding); we only read
@@ -551,13 +567,19 @@ export function ReelsApp() {
         <div
           ref={scrollerRef}
           onScroll={onScroll}
-          onTouchStart={() => (touchingRef.current = true)}
+          onTouchStart={(e) => {
+            touchingRef.current = true;
+            pullRefresh.handlers.onTouchStart(e);
+          }}
+          onTouchMove={pullRefresh.handlers.onTouchMove}
           onTouchEnd={() => {
             touchingRef.current = false;
+            pullRefresh.handlers.onTouchEnd();
             armSettle(); // cancelled by the next scroll event if momentum follows
           }}
           onTouchCancel={() => {
             touchingRef.current = false;
+            pullRefresh.handlers.onTouchEnd();
             armSettle();
           }}
           className="absolute inset-0 snap-y snap-mandatory overscroll-contain"
@@ -606,6 +628,22 @@ export function ReelsApp() {
         <div className="pointer-events-none absolute inset-x-4 h-[2px] overflow-clip rounded-full bg-white/25" style={{ bottom: PROGRESS_BOTTOM }}>
           <motion.div className="h-full rounded-full bg-white/90" style={{ width: progress }} />
         </div>
+      </motion.div>
+
+      {/* Pull to refresh: turns as you pull, spins once let go past the point */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 z-30 -ml-[18px] flex size-9 items-center justify-center rounded-full bg-black/55 text-white"
+        style={{ top: "calc(var(--top-inset) + 4px)", y: pullY, opacity: pullOpacity }}
+      >
+        <motion.span
+          className="flex"
+          style={pullRefresh.refreshing ? undefined : { rotate: pullTurn }}
+          animate={pullRefresh.refreshing ? { rotate: [0, 360] } : undefined}
+          transition={pullRefresh.refreshing ? { duration: 0.7, repeat: Infinity, ease: "linear" } : undefined}
+        >
+          <RotateCw size={18} strokeWidth={2.4} />
+        </motion.span>
       </motion.div>
 
       {/* Double-tap hearts */}
