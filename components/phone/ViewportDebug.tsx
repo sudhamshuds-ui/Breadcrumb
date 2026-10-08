@@ -55,8 +55,13 @@ export function ViewportDebug() {
           className="rounded bg-white/20 px-2 py-1 text-white"
           onClick={() =>
             tryFix("A scroll nudge", () => {
+              const root = document.documentElement;
+              root.style.minHeight = "calc(100% + 1px)";
               window.scrollTo(0, 1);
-              requestAnimationFrame(() => window.scrollTo(0, 0));
+              requestAnimationFrame(() => {
+                window.scrollTo(0, 0);
+                setTimeout(() => (root.style.minHeight = ""), 300);
+              });
             })
           }
         >
