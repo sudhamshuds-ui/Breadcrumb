@@ -21,7 +21,29 @@ export function PhoneFrame({ children }: { children: React.ReactNode }) {
   // the page 1px on every touch). It never fixed the strip, and on iPhone a
   // scroll during a touch cancels the tap. Removed on purpose; see CLAUDE.md.
 
-  // Safety net: the page itself should never be scrolled (see globals.css).
+  // Lock the page (globals.css) so it can't be pulled, except while the
+  // home-screen app is open short: iOS sometimes leaves a black strip under
+  // the nav until the page is pulled down once, so keep that pull possible
+  // until the window fills the screen.
+  useEffect(() => {
+    const root = document.documentElement;
+    const nav = window.navigator as Navigator & { standalone?: boolean };
+    const update = () => {
+      const portrait = window.innerHeight >= window.innerWidth;
+      const short = nav.standalone === true && portrait && window.innerHeight < Math.max(screen.width, screen.height) - 1;
+      root.classList.toggle("page-locked", !short);
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.visualViewport?.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.visualViewport?.removeEventListener("resize", update);
+      root.classList.remove("page-locked");
+    };
+  }, []);
+
+  // Safety net: the page itself should never stay scrolled (see globals.css).
   // If iOS leaves it offset anyway (stuck after a pull, a bounce or a swipe
   // back), the picture and the touch areas drift apart and taps miss. Put it
   // back, but only once no finger is down: moving the page during a touch

@@ -196,10 +196,12 @@ body {
    thread scroll, inside their own boxes. If the whole page gets pulled down,
    iOS home-screen apps can get stuck with the picture shifted but taps still
    landing at the old spot (seen on-device: 116 pt off, so taps on Crumb's
-   widget hit the video behind it). */
+   widget hit the video behind it). The lock is switched on by PhoneFrame,
+   except while the home-screen app is open short (the black strip), when the
+   page must stay pullable so a pull-down can fix it. */
 @media (max-width: 499px) {
-  html:has(.phone-ui),
-  html:has(.phone-ui) body {
+  html.page-locked,
+  html.page-locked body {
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
