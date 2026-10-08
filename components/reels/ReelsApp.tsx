@@ -23,7 +23,11 @@ const CHROME_BOTTOM = PROGRESS_BOTTOM + 8; // creator row and action rail sit ab
 const CHIP_BOTTOM = NAV_H + 104; // above the creator row and caption
 const HANDLE_TOP = 268;
 const SHEET_TOP_RATIO = 0.4;
-const SETTLE_MS = 120; // scroll is "done" after this long without a scroll event
+// Fallback only, for browsers without the "scrollend" event: scroll counts as
+// "done" after this long without a scroll event. Long enough that an iPhone
+// pausing its updates mid-flick isn't mistaken for the end of the swipe.
+const SETTLE_MS = 260;
+const HAS_SCROLLEND = typeof window !== "undefined" && "onscrollend" in window;
 const ENABLED_KEY = "crumb.enabled";
 
 interface Burst {
@@ -159,10 +163,27 @@ export function ReelsApp() {
     }
   };
 
-  const scheduleSettle = () => {
+  const armSettle = () => {
     if (settleTimer.current) clearTimeout(settleTimer.current);
     settleTimer.current = setTimeout(settle, SETTLE_MS);
   };
+  const scheduleSettle = () => {
+    if (!HAS_SCROLLEND) return armSettle();
+    // Scrolling is happening, so "scrollend" will come: drop any fallback check.
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+  };
+
+  // Settle exactly when the browser says the swipe (including momentum and
+  // snap) has finished, instead of guessing from a pause in scroll events.
+  const settleRef = useRef(settle);
+  settleRef.current = settle;
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el || !HAS_SCROLLEND) return;
+    const onEnd = () => settleRef.current();
+    el.addEventListener("scrollend", onEnd);
+    return () => el.removeEventListener("scrollend", onEnd);
+  }, []);
 
   const onScroll = () => {
     swipingRef.current = true;
@@ -342,11 +363,11 @@ export function ReelsApp() {
           onTouchStart={() => (touchingRef.current = true)}
           onTouchEnd={() => {
             touchingRef.current = false;
-            scheduleSettle();
+            armSettle(); // cancelled by the next scroll event if momentum follows
           }}
           onTouchCancel={() => {
             touchingRef.current = false;
-            scheduleSettle();
+            armSettle();
           }}
           className="absolute inset-0 snap-y snap-mandatory overscroll-contain"
           style={{ overflowY: blocked ? "hidden" : "scroll", touchAction: "pan-y" }}
