@@ -190,17 +190,26 @@
    screen (by the status bar's height), leaving a black band under the nav.
    Size to the full screen instead. */
 @media (max-width: 499px) {
-  .phone-ui.phone-ui.standalone {
-    top: 0 !important;
-    bottom: auto !important;
-    height: var(--app-h) !important;
-  }
+
   /* The page behind the app never scrolls or rubber-bands */
   html:has(.phone-ui.standalone),
   html:has(.phone-ui.standalone) body {
     height: 100%;
     overflow: hidden;
     overscroll-behavior: none;
+  }
+}
+
+/* Home-screen app: fill the real screen height. Must sit in the utilities
+   layer: the frame's Tailwind "!" classes live there, and a layered !important
+   always beats an unlayered one, so outside this layer the rule is ignored. */
+@layer utilities {
+  @media (max-width: 499px) {
+    .phone-ui.phone-ui.standalone {
+      top: 0 !important;
+      bottom: auto !important;
+      height: var(--app-h) !important;
+    }
   }
 }
 
