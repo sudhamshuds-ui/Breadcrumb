@@ -165,7 +165,7 @@ export function ReelsApp() {
         startIndex,
         startTime,
       })
-        ? "listen"
+        ? "intro"
         : null);
     if (start) {
       tutorialDispatch({ type: "START", at: start });
@@ -656,7 +656,7 @@ export function ReelsApp() {
               setMuted(!muted);
             }}
             aria-label={muted ? "Turn sound on" : "Turn sound off"}
-            className="absolute right-2 z-20 flex size-11 items-center justify-center text-white"
+            className="absolute right-2 z-[26] flex size-11 items-center justify-center text-white"
             style={{ top: "calc(var(--top-inset) + 46px)" }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -749,6 +749,20 @@ export function ReelsApp() {
         step={tutorial}
         frameRef={viewportRef}
         coachBottom={WIDGET_BOTTOM + 70}
+        onStart={() => {
+          // Sound on inside the tap itself (iPhones only allow it then), and
+          // the reel starts from the top with Crumb listening afresh.
+          soundChosen.current = true;
+          const v = getActiveVideo();
+          if (v) {
+            v.muted = false;
+            v.currentTime = 0;
+            v.play().catch(() => {});
+          }
+          setMuted(false);
+          dispatch({ type: "REEL_ENTER" });
+          tutorialDispatch({ type: "BEGIN" });
+        }}
         onSkip={() => tutorialDispatch({ type: "SKIP" })}
       />
 

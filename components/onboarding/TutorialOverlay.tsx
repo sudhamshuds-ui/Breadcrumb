@@ -14,11 +14,13 @@ export function TutorialOverlay({
   step,
   frameRef,
   coachBottom,
+  onStart,
   onSkip,
 }: {
   step: TutorialStep;
   frameRef: RefObject<HTMLDivElement | null>;
   coachBottom: number; // where the coach card sits when it's above Crumb
+  onStart: () => void; // the welcome card's button: sound on, reel plays
   onSkip: () => void;
 }) {
   const copy = step === "finished" ? null : TUTORIAL_COPY[step];
@@ -38,14 +40,20 @@ export function TutorialOverlay({
             role="status"
             aria-live="polite"
             className="crumb-type absolute inset-x-3 z-[45] rounded-[22px] bg-white px-4 pt-3 pb-3.5 text-crumb-ink shadow-[0_8px_28px_rgba(0,0,0,0.28)]"
-            style={copy.coach === "top" ? { top: "calc(var(--top-inset) + 52px)" } : { bottom: coachBottom }}
+            style={
+              copy.coach === "top"
+                ? { top: "calc(var(--top-inset) + 52px)" }
+                : copy.coach === "center"
+                  ? { top: "38%" }
+                  : { bottom: coachBottom }
+            }
             initial={{ opacity: 0, y: copy.coach === "top" ? -8 : 10 }}
             animate={{ opacity: 1, y: 0, transition: { duration: 0.24, delay: 0.15 } }}
             exit={{ opacity: 0, transition: { duration: 0.12 } }}
           >
             <div className="flex items-center justify-between gap-3">
-              <span className="flex gap-1" aria-label={`Step ${dot + 1} of ${TUTORIAL_STEPS.length}`}>
-                {TUTORIAL_STEPS.map((s, i) => (
+              <span className="flex gap-1" aria-label={dot < 0 ? undefined : `Step ${dot + 1} of ${TUTORIAL_STEPS.length}`}>
+                {dot >= 0 && TUTORIAL_STEPS.map((s, i) => (
                   <span
                     key={s}
                     className="h-1.5 rounded-full transition-all"
@@ -77,6 +85,16 @@ export function TutorialOverlay({
             <p className="mt-1 text-[13.5px] leading-snug text-crumb-body">
               <Inked text={copy.body} />
             </p>
+            {step === "intro" && (
+              <button
+                type="button"
+                data-interactive
+                onClick={onStart}
+                className="mt-3 h-11 w-full rounded-full bg-crumb-ink text-[15px] font-medium text-white active:opacity-85"
+              >
+                Start with sound
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
