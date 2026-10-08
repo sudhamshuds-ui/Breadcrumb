@@ -4,6 +4,8 @@ import type { Reel } from "@/lib/types";
 // made up; brand names appear only where the video itself says them.
 // Signal times were estimated from the transcripts (public/reels/*.txt) and
 // spot-checked against the captions burned into the videos.
+// Feed order 1, 3, 2, 4, 5: the quiet reel sits between the two flagged ones
+// so testers never see two flags in a row.
 
 const IG_RING: [string, string] = ["#F58529", "#DD2A7B"];
 
@@ -70,6 +72,34 @@ export const reels: Reel[] = [
     threadId: "t1",
   },
   {
+    id: "r3",
+    creator: { handle: "ollie.tells.jokes", name: "Ollie Grant", initials: "OG", ring: IG_RING },
+    src: "/reels/reel-03.mp4",
+    poster: null,
+    tier: "quiet",
+    caption: "pump that diet coke straight into my veins #dietcoke #cokezero #dietdrpepper #standupcomedian",
+    postedOn: "2 days ago",
+    audio: "ollie.tells.jokes · Original audio",
+    paidPartner: null,
+    durationSec: 14.1,
+    stats: { likes: "48.2K", comments: "1,288", reposts: "903", shares: "11.7K" },
+    theme: { from: "#1A0E0E", to: "#3B1C1C", accent: "#E24A4A" },
+    transcript: [
+      {
+        start: 0,
+        end: 14.1,
+        text: "I have never met a Diet Coke drinker who is not a profoundly broken person. Every Diet Coke drinker has a hole in their heart that aspartame is never gonna fill.",
+      },
+    ],
+    comments: [
+      { author: "dayzen.rae", text: "Most people drinking Diet Coke are just willing to admit it, so you know", likes: 88, ago: "12h" },
+      { author: "ryan.k.80", text: "Don't call me out like that 😩", likes: 54, ago: "4d" },
+      { author: "two.of.us.91", text: "I say this all the time because it's just true", likes: 21, ago: "2d" },
+    ],
+    signals: [],
+    threadId: null,
+  },
+  {
     id: "r2",
     creator: { handle: "maya.skin.journal", name: "Maya Ortiz", initials: "MO", ring: IG_RING },
     src: "/reels/reel-02.mp4",
@@ -122,34 +152,6 @@ export const reels: Reel[] = [
       },
     ],
     threadId: "t2",
-  },
-  {
-    id: "r3",
-    creator: { handle: "ollie.tells.jokes", name: "Ollie Grant", initials: "OG", ring: IG_RING },
-    src: "/reels/reel-03.mp4",
-    poster: null,
-    tier: "quiet",
-    caption: "pump that diet coke straight into my veins #dietcoke #cokezero #dietdrpepper #standupcomedian",
-    postedOn: "2 days ago",
-    audio: "ollie.tells.jokes · Original audio",
-    paidPartner: null,
-    durationSec: 14.1,
-    stats: { likes: "48.2K", comments: "1,288", reposts: "903", shares: "11.7K" },
-    theme: { from: "#1A0E0E", to: "#3B1C1C", accent: "#E24A4A" },
-    transcript: [
-      {
-        start: 0,
-        end: 14.1,
-        text: "I have never met a Diet Coke drinker who is not a profoundly broken person. Every Diet Coke drinker has a hole in their heart that aspartame is never gonna fill.",
-      },
-    ],
-    comments: [
-      { author: "dayzen.rae", text: "Most people drinking Diet Coke are just willing to admit it, so you know", likes: 88, ago: "12h" },
-      { author: "ryan.k.80", text: "Don't call me out like that 😩", likes: 54, ago: "4d" },
-      { author: "two.of.us.91", text: "I say this all the time because it's just true", likes: 21, ago: "2d" },
-    ],
-    signals: [],
-    threadId: null,
   },
   {
     id: "r4",
