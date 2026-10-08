@@ -85,7 +85,7 @@ export function BottomNav() {
     <div className="pointer-events-none absolute inset-x-0 z-20 flex justify-center" style={{ bottom: "var(--bottom-inset)" }}>
       <nav
         data-interactive
-        className="pointer-events-auto flex h-[56px] w-[300px] items-center justify-between rounded-full border border-white/15 bg-white/10 px-2 text-white backdrop-blur-xl backdrop-saturate-150"
+        className="pointer-events-auto flex h-[52px] w-[300px] items-center justify-between rounded-full border border-white/15 bg-white/10 px-2 text-white backdrop-blur-xl backdrop-saturate-150"
         style={{ WebkitBackdropFilter: "blur(24px) saturate(150%)" }}
       >
         <NavIcon><House size={23} strokeWidth={1.9} /></NavIcon>

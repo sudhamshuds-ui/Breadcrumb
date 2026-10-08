@@ -175,25 +175,25 @@
   -webkit-touch-callout: none; /* no iOS long-press menu while holding to pause */
   scrollbar-width: none;
   --top-inset: 52px; /* top bar sits under the fake status bar in the desktop frame */
-  --bottom-inset: 22px; /* nav floats just above the fake home indicator */
+  --bottom-inset: 24px; /* nav floats just above the fake home indicator */
 }
 
 /* On a real phone: the device's own status bar and notch set the top inset */
 @media (max-width: 499px) {
   .phone-ui {
     --top-inset: max(8px, env(safe-area-inset-top));
-    --bottom-inset: max(10px, calc(env(safe-area-inset-bottom) - 6px));
+    --bottom-inset: max(12px, calc(env(safe-area-inset-bottom) - 10px));
   }
 }
 
 /* Opened from the home screen: iOS can hand the page a box shorter than the
    screen (by the status bar's height), leaving a black band under the nav.
    Size to the full screen instead. */
-@media (max-width: 499px) and (display-mode: standalone) {
-  .phone-ui.phone-ui {
+@media (max-width: 499px) {
+  html.standalone .phone-ui.phone-ui {
     top: 0 !important;
     bottom: auto !important;
-    height: 100lvh !important;
+    height: var(--app-h, 100lvh) !important;
   }
 }
 
