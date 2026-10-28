@@ -18,6 +18,17 @@ export const threads: Thread[] = [
     },
     evidenceNote:
       "Weight-loss medicines worked for many people in trials, alongside diet and activity. They need a prescription, regular check-ins and can have side effects.",
+    summary: [
+      "This reel is a ",
+      { text: "paid partnership", mark: "paid_partnership" },
+      " for ",
+      { text: "weight-loss medicine", mark: "product_mention" },
+      ", with a ",
+      { text: "price offer", mark: "discount_code" },
+      ". Evidence is ",
+      { text: "mixed", mark: "evidence" },
+      ".",
+    ],
     friendNames: ["Priya", "Tom"],
     creator: {
       postsReviewed: 23,
@@ -82,6 +93,11 @@ export const threads: Thread[] = [
         summary:
           "In 1,961 adults over 68 weeks, people on weekly semaglutide lost about 15% of their body weight on average, compared with about 2% on placebo. Nausea and other stomach side effects were common, and the drug's maker funded the trial.",
         url: "https://pubmed.ncbi.nlm.nih.gov/33567185/",
+        highlight: {
+          value: "15%",
+          label: "average body weight lost over 68 weeks",
+          compare: { value: "2%", label: "on placebo" },
+        },
       },
       {
         title: "Weight loss medicine",

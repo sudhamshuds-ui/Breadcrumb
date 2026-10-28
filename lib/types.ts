@@ -105,7 +105,14 @@ export interface Source {
   year?: string;
   summary: string; // plain language, max 2 sentences
   url: string;
+  // The one number worth seeing, e.g. 15% vs 2% on placebo
+  highlight?: { value: string; label: string; compare?: { value: string; label: string } };
+  image?: string; // background picture for the resources card
 }
+
+// A piece of the thread's one-sentence summary: plain text, or a phrase
+// marked with the icon of the signal kind it describes (or "evidence").
+export type SummaryPart = string | { text: string; mark: SignalKind | "evidence" };
 
 // A creator's history across Breadcrumb. Scored per post, never as one number.
 export interface CreatorRecord {
@@ -140,6 +147,7 @@ export interface Thread {
   trust: TrustSignals;
   moneyNote?: string; // overrides the peek card's money line, e.g. a brand's own ad
   evidenceNote: string; // what the sources say, in two plain sentences
+  summary?: SummaryPart[]; // what Crumb found, as one sentence with inline icons
   friendNames: string[];
   creator: CreatorRecord;
   care: CareTopic;
