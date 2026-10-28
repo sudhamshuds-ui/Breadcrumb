@@ -27,7 +27,7 @@ export function ResourcesCard({ thread }: { thread: Thread }) {
         className="mt-8 block w-full rounded-[28px] bg-white px-3.5 pt-3.5 pb-6 text-left transition-transform duration-150 active:scale-[0.99]"
       >
         <span className="flex items-center justify-between gap-2 py-0.5 pr-0.5 pl-1.5">
-          <span className="text-[17px] font-medium tracking-[-0.01em]">Resources</span>
+          <span className="text-[17px] font-medium tracking-[-0.01em]">Scientific studies</span>
           <span className="flex size-9 items-center justify-center rounded-full bg-crumb-surface text-crumb-body" aria-hidden>
             <ArrowUpRight size={18} />
           </span>
@@ -78,7 +78,7 @@ export function ResourcesCard({ thread }: { thread: Thread }) {
 function ResourcesModal({ open, onClose, sources }: { open: boolean; onClose: () => void; sources: Source[] }) {
   const [openUrl, setOpenUrl] = useState<string | null>(sources[0]?.url ?? null);
   return (
-    <Modal open={open} title="Resources" onClose={onClose}>
+    <Modal open={open} title="Scientific studies" onClose={onClose}>
       <div className="flex flex-col gap-2">
         {sources.map((s) => (
           <FoldCard

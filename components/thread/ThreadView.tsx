@@ -4,21 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
 import {
-  CalendarCheck,
   ChevronLeft,
-  Phone,
-  PhoneCall,
   SquarePen,
 } from "lucide-react";
 import type { Reel, Review, Thread } from "@/lib/types";
 import { addMyReview, readMyReviews } from "@/lib/my-reviews";
-import { HEALTHDIRECT_PHONE, HEALTHDIRECT_TEL } from "@/lib/data/care";
 import { CrumbGlyph } from "@/components/crumb/CrumbGlyph";
 import { useIconStyle } from "@/components/crumb/SignalIcon";
 import { CareSheet, type CareStart } from "./CareSheet";
 import { ReviewSheet } from "./ReviewSheet";
 import { WhatPeopleSay } from "./Reviews";
 import { ResourcesCard } from "./Resources";
+import { CareCard } from "./CareCard";
 import { MODAL_LAYER_ID } from "./Modal";
 import { ThreadHero } from "./ThreadHero";
 import { CrumbSummaryCard, CrumbSummaryModal } from "./CrumbSummary";
@@ -110,34 +107,7 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
           <ResourcesCard thread={thread} />
 
           {/* The way to a professional: the main action, last */}
-          <section ref={careRef} className="mt-8 rounded-[28px] bg-crumb-ink p-5 text-crumb-surface">
-            <h2 className="text-[21px] leading-tight tracking-[-0.015em] [text-wrap:balance]">
-              Talk to a professional about {thread.care.topic}
-            </h2>
-            <p className="mt-2 text-[14px] leading-normal text-crumb-surface/80">{thread.care.first}</p>
-            <div className="mt-4 flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => setCare("clinic")}
-                className="flex h-12 items-center justify-center gap-2 rounded-full bg-crumb-accent text-[15px] font-medium text-white active:bg-crumb-accent-active"
-              >
-                <CalendarCheck size={18} /> Book a GP appointment
-              </button>
-              <button
-                type="button"
-                onClick={() => setCare("call")}
-                className="flex h-12 items-center justify-center gap-2 rounded-full text-[15px] font-medium ring-1 ring-crumb-surface/30 active:bg-crumb-surface/10"
-              >
-                <PhoneCall size={18} /> Schedule a call
-              </button>
-              <a
-                href={HEALTHDIRECT_TEL}
-                className="flex h-11 items-center justify-center gap-2 rounded-full text-[14px] text-crumb-surface/85 active:bg-crumb-surface/10"
-              >
-                <Phone size={16} /> Call healthdirect, {HEALTHDIRECT_PHONE}, free 24/7
-              </a>
-            </div>
-          </section>
+          <CareCard thread={thread} onStart={setCare} cardRef={careRef} />
 
           <p className="mt-8 mb-4 text-center text-[13px] leading-normal text-crumb-muted [text-wrap:balance]">
             Moderated thread, checked {thread.lastModerated}. Breadcrumb shares what people and sources say; it doesn&apos;t give

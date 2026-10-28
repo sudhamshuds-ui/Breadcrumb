@@ -11,13 +11,14 @@ export interface Clinic {
   kind: "GP clinic" | "Medical centre" | "Hospital";
   distance: string;
   billing: string; // "Bulk billing" etc.
+  image: string; // photo of the front (generated in Figma, no real place)
 }
 
 export const CLINICS: Clinic[] = [
-  { id: "c1", name: "Marrickville Family Practice", kind: "GP clinic", distance: "0.8 km", billing: "Bulk billing" },
-  { id: "c2", name: "Enmore Road Medical", kind: "Medical centre", distance: "1.3 km", billing: "Bulk billing for concession" },
-  { id: "c3", name: "Sydenham Health Hub", kind: "Medical centre", distance: "2.1 km", billing: "Mixed billing" },
-  { id: "c4", name: "Inner West Hospital outpatients", kind: "Hospital", distance: "3.4 km", billing: "Referral needed" },
+  { id: "c1", image: "/care/clinic-c1.jpg", name: "Marrickville Family Practice", kind: "GP clinic", distance: "0.8 km", billing: "Bulk billing" },
+  { id: "c2", image: "/care/clinic-c2.jpg", name: "Enmore Road Medical", kind: "Medical centre", distance: "1.3 km", billing: "Bulk billing for concession" },
+  { id: "c3", image: "/care/clinic-c3.jpg", name: "Sydenham Health Hub", kind: "Medical centre", distance: "2.1 km", billing: "Mixed billing" },
+  { id: "c4", image: "/care/clinic-c4.jpg", name: "Inner West Hospital outpatients", kind: "Hospital", distance: "3.4 km", billing: "Referral needed" },
 ];
 
 // Upcoming appointment slots, relative to today. Same for every clinic: it's
