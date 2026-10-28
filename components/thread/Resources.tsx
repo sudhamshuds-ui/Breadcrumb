@@ -24,7 +24,7 @@ export function ResourcesCard({ thread }: { thread: Thread }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-8 block w-full rounded-[28px] bg-white px-3.5 pt-3.5 pb-6 text-left transition-transform duration-150 active:scale-[0.99]"
+        className="mt-4 block w-full rounded-[28px] bg-white px-3.5 pt-3.5 pb-6 text-left transition-transform duration-150 active:scale-[0.99]"
       >
         <span className="flex items-center justify-between gap-2 py-0.5 pr-0.5 pl-1.5">
           <span className="text-[17px] font-medium tracking-[-0.01em]">Scientific studies</span>
@@ -34,9 +34,15 @@ export function ResourcesCard({ thread }: { thread: Thread }) {
         </span>
         <span className="mt-4 block px-1.5">
           {/* The study itself leads: what it is, who published it */}
-          <span className="block text-[18px] leading-snug font-medium tracking-[-0.01em] [text-wrap:balance]">{top.title}</span>
+          <span className="line-clamp-3 block text-[18px] leading-snug font-medium tracking-[-0.01em] [text-wrap:balance]">{top.title}</span>
           <span className="mt-1 block text-[13px] text-crumb-muted">{meta(top)}</span>
-          {h ? (
+          {h && !h.compare ? (
+            // One number on its own reads as a sentence: the number, then what it means
+            <>
+              <span className="mt-5 block text-[40px] leading-none tracking-[-0.04em] tabular-nums">{h.value}</span>
+              <span className="mt-2 block text-[14px] leading-snug text-crumb-body">{capitalise(h.label)}</span>
+            </>
+          ) : h ? (
             <>
               <span className="mt-5 block text-[14px] leading-snug text-crumb-body">{capitalise(h.label)}</span>
               <span className="mt-3 grid grid-cols-2 gap-4">
@@ -127,6 +133,14 @@ function compareRows(h: NonNullable<Source["highlight"]>) {
 // The headline number against its comparison, as two bars.
 function Compare({ source }: { source: Source }) {
   const h = source.highlight!;
+  if (!h.compare) {
+    return (
+      <div className="mb-3 rounded-[16px] bg-crumb-surface p-3">
+        <p className="text-[28px] leading-none tracking-[-0.03em] tabular-nums">{h.value}</p>
+        <p className="mt-1.5 text-[13px] leading-snug text-crumb-body">{capitalise(h.label)}</p>
+      </div>
+    );
+  }
   const rows = compareRows(h);
   return (
     <div className="mb-3 rounded-[16px] bg-crumb-surface p-3">
