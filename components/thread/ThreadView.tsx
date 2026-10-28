@@ -13,7 +13,6 @@ import {
   ChevronLeft,
   Phone,
   PhoneCall,
-  Play,
   SquarePen,
   ThumbsUp,
 } from "lucide-react";
@@ -28,6 +27,7 @@ import { useIconStyle } from "@/components/crumb/SignalIcon";
 import { CommunityRow, CountTag, FindingsList } from "@/components/crumb/Findings";
 import { CareSheet, type CareStart } from "./CareSheet";
 import { ReviewSheet } from "./ReviewSheet";
+import { ThreadHero } from "./ThreadHero";
 
 // Built for a ~30 second visit, in the widget's visual language: what Crumb
 // found (laid out exactly like the peek card), then the way to a
@@ -111,21 +111,7 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
         </header>
 
         <main className="px-3">
-          {/* The post this thread is about */}
-          <Link href={backUrl} replace className="mt-3 flex items-center gap-3 px-1 active:opacity-70">
-            <span
-              className="relative h-[66px] w-[40px] shrink-0 overflow-hidden rounded-[9px] bg-crumb-ink"
-              style={{ backgroundImage: `url(${reel.poster})`, backgroundSize: "cover", backgroundPosition: "center" }}
-            >
-              <span className="absolute inset-0 flex items-center justify-center bg-black/20 text-white">
-                <Play size={13} fill="currentColor" strokeWidth={0} />
-              </span>
-            </span>
-            <span className="min-w-0">
-              <h1 className="text-[22px] leading-[1.15] tracking-[-0.02em] [text-wrap:balance]">{thread.productName}</h1>
-              <span className="mt-0.5 block truncate text-[13px] text-crumb-muted">{reel.creator.handle}</span>
-            </span>
-          </Link>
+          <ThreadHero thread={thread} reel={reel} backUrl={backUrl} />
 
           {/* What Crumb found: the peek card, at full size */}
           <section className="mt-4 rounded-[28px] bg-white p-3">
