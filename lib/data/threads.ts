@@ -30,6 +30,8 @@ export const threads: Thread[] = [
       ".",
     ],
     friendNames: ["Priya", "Tom"],
+    reviewSummary:
+      "Most say it can work, but to talk to a GP first and plan for the ongoing cost and side effects.",
     creator: {
       postsReviewed: 23,
       postsFlagged: 14,

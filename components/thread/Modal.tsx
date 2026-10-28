@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { X } from "lucide-react";
 
@@ -23,7 +24,11 @@ export function Modal({ open, title, onClose, children }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  return (
+  // Rendered into the page's overlay layer, so a modal opened from inside the
+  // scrolling thread still covers the whole screen.
+  const layer = typeof document === "undefined" ? null : document.getElementById(MODAL_LAYER_ID);
+
+  const modal = (
     <AnimatePresence>
       {open && (
         <motion.div
@@ -62,4 +67,7 @@ export function Modal({ open, title, onClose, children }: Props) {
       )}
     </AnimatePresence>
   );
+  return layer ? createPortal(modal, layer) : modal;
 }
+
+export const MODAL_LAYER_ID = "thread-modal-layer";

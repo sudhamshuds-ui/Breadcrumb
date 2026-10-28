@@ -131,6 +131,7 @@ export interface DiscussionPost {
   votes: number;
   postedAgo: string;
   replies?: DiscussionPost[];
+  mine?: boolean; // written by the tester on this device
 }
 
 // Who to talk to about this topic (drives the "Talk to a professional" card).
@@ -149,6 +150,7 @@ export interface Thread {
   evidenceNote: string; // what the sources say, in two plain sentences
   summary?: SummaryPart[]; // what Crumb found, as one sentence with inline icons
   friendNames: string[];
+  reviewSummary?: string; // what reviewers say overall, one plain sentence
   creator: CreatorRecord;
   care: CareTopic;
   reviews: Review[];

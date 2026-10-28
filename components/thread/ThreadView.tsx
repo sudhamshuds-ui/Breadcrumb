@@ -1,37 +1,34 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
-  ArrowBigUp,
   ArrowUpRight,
-  BadgeCheck,
   CalendarCheck,
   ChevronDown,
   ChevronLeft,
   Phone,
   PhoneCall,
   SquarePen,
-  ThumbsUp,
 } from "lucide-react";
-import type { DiscussionPost, Reel, Review, Thread } from "@/lib/types";
+import type { Reel, Review, Thread } from "@/lib/types";
 import { firstSentence } from "@/lib/thread-view";
-import { addMyReview, readMyReviews, relationOf, sortReviews } from "@/lib/my-reviews";
-import { avatarFor, MY_AVATAR } from "@/lib/avatars";
+import { addMyReview, readMyReviews } from "@/lib/my-reviews";
 import { HEALTHDIRECT_PHONE, HEALTHDIRECT_TEL } from "@/lib/data/care";
 import { CrumbGlyph } from "@/components/crumb/CrumbGlyph";
 import { useIconStyle } from "@/components/crumb/SignalIcon";
 import { CareSheet, type CareStart } from "./CareSheet";
 import { ReviewSheet } from "./ReviewSheet";
+import { WhatPeopleSay } from "./Reviews";
+import { MODAL_LAYER_ID } from "./Modal";
 import { ThreadHero } from "./ThreadHero";
 import { CrumbSummaryCard, CrumbSummaryModal } from "./CrumbSummary";
 
-// Built for a ~30 second visit, in the widget's visual language: what Crumb
-// found (laid out exactly like the peek card), then the way to a
-// professional; people you know next; sources one tap deep; everything else
-// folded under "More on this thread". One help CTA at a time: the bottom bar
-// only appears once the care card has scrolled out of view.
+// Built for a ~30 second visit as a few cards that open, not a long read:
+// what Crumb found, what people say, what the evidence says, then the way to
+// a professional. One help CTA at a time: the bottom bar only appears once
+// the care card has scrolled out of view.
 
 const SURFACE = "#EDEDED"; // the widget's light surface, used as the page
 
@@ -46,7 +43,6 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
   const [writing, setWriting] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [mine, setMine] = useState<Review[]>([]);
-  const [allReviews, setAllReviews] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const iconStyle = useIconStyle();
 
@@ -83,12 +79,6 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
     else router.replace(backUrl);
   };
 
-  const reviews = useMemo(() => sortReviews([...mine, ...thread.reviews]), [mine, thread.reviews]);
-  const known = reviews.filter((r) => r.mine || relationOf(r) === "friend");
-  const shownReviews = allReviews ? reviews : known;
-  const topAnswer = thread.discussion.find((d) => d.role) ?? thread.discussion[0];
-  const discussionCount = thread.discussion.reduce((n, d) => n + 1 + (d.replies?.length ?? 0), 0);
-
   return (
     <div className="crumb-type absolute inset-0 text-crumb-ink" style={{ background: SURFACE }}>
       <div ref={scrollRef} className="absolute inset-0 overflow-y-auto overscroll-contain pb-[calc(96px+env(safe-area-inset-bottom))]">
@@ -117,65 +107,7 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
             <CrumbSummaryCard reel={reel} thread={thread} iconStyle={iconStyle} onOpen={() => setSummaryOpen(true)} />
           </div>
 
-          {/* The way to a professional: the main action */}
-          <section ref={careRef} className="mt-3 rounded-[28px] bg-crumb-ink p-5 text-crumb-surface">
-            <h2 className="text-[21px] leading-tight tracking-[-0.015em] [text-wrap:balance]">
-              Talk to a professional about {thread.care.topic}
-            </h2>
-            <p className="mt-2 text-[14px] leading-normal text-crumb-surface/80">{thread.care.first}</p>
-            <div className="mt-4 flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => setCare("clinic")}
-                className="flex h-12 items-center justify-center gap-2 rounded-full bg-crumb-accent text-[15px] font-medium text-white active:bg-crumb-accent-active"
-              >
-                <CalendarCheck size={18} /> Book a GP appointment
-              </button>
-              <button
-                type="button"
-                onClick={() => setCare("call")}
-                className="flex h-12 items-center justify-center gap-2 rounded-full text-[15px] font-medium ring-1 ring-crumb-surface/30 active:bg-crumb-surface/10"
-              >
-                <PhoneCall size={18} /> Schedule a call
-              </button>
-              <a
-                href={HEALTHDIRECT_TEL}
-                className="flex h-11 items-center justify-center gap-2 rounded-full text-[14px] text-crumb-surface/85 active:bg-crumb-surface/10"
-              >
-                <Phone size={16} /> Call healthdirect, {HEALTHDIRECT_PHONE}, free 24/7
-              </a>
-            </div>
-          </section>
-
-          {/* Reviews: people you know, then everyone on request */}
-          <section className="mt-8">
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 className="px-1 text-[18px] tracking-[-0.01em]">
-                {allReviews ? `All reviews (${reviews.length})` : "People you know"}
-              </h2>
-              <button type="button" onClick={() => setWriting(true)} className="text-[14px] font-medium text-crumb-accent">
-                Write a review
-              </button>
-            </div>
-            {shownReviews.length > 0 ? (
-              <div className="mt-3 divide-y divide-crumb-hairline rounded-[24px] bg-white">
-                {shownReviews.map((r) => (
-                  <ReviewRow key={r.id} review={r} />
-                ))}
-              </div>
-            ) : (
-              <p className="mt-2 text-[14px] text-crumb-body">No one you know has reviewed this yet.</p>
-            )}
-            {reviews.length > known.length && (
-              <button
-                type="button"
-                onClick={() => setAllReviews((a) => !a)}
-                className="mt-2 h-10 text-[14px] font-medium text-crumb-ink underline decoration-crumb-hairline-strong underline-offset-4"
-              >
-                {allReviews ? "Show people you know only" : `See all ${reviews.length} reviews`}
-              </button>
-            )}
-          </section>
+          <WhatPeopleSay thread={thread} mine={mine} onWrite={() => setWriting(true)} />
 
           {/* Sources: the takeaway up front, the detail one tap away */}
           <section className="mt-8">
@@ -202,23 +134,33 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
             </div>
           </section>
 
-          {/* Depth for those who want it */}
-          <section className="mt-8">
-            <h2 className="px-1 text-[18px] tracking-[-0.01em]">More on this thread</h2>
-            <div className="mt-3 divide-y divide-crumb-hairline rounded-[24px] bg-white">
-              {topAnswer && (
-                <Fold
-                  title={`Discussion (${discussionCount})`}
-                  meta={topAnswer.role ? `Top answer from a verified ${topAnswer.role.toLowerCase()}` : undefined}
-                  preview={topAnswer.text}
-                >
-                  <div className="flex flex-col divide-y divide-crumb-hairline">
-                    {thread.discussion.map((d) => (
-                      <Post key={d.id} post={d} />
-                    ))}
-                  </div>
-                </Fold>
-              )}
+          {/* The way to a professional: the main action, last */}
+          <section ref={careRef} className="mt-8 rounded-[28px] bg-crumb-ink p-5 text-crumb-surface">
+            <h2 className="text-[21px] leading-tight tracking-[-0.015em] [text-wrap:balance]">
+              Talk to a professional about {thread.care.topic}
+            </h2>
+            <p className="mt-2 text-[14px] leading-normal text-crumb-surface/80">{thread.care.first}</p>
+            <div className="mt-4 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={() => setCare("clinic")}
+                className="flex h-12 items-center justify-center gap-2 rounded-full bg-crumb-accent text-[15px] font-medium text-white active:bg-crumb-accent-active"
+              >
+                <CalendarCheck size={18} /> Book a GP appointment
+              </button>
+              <button
+                type="button"
+                onClick={() => setCare("call")}
+                className="flex h-12 items-center justify-center gap-2 rounded-full text-[15px] font-medium ring-1 ring-crumb-surface/30 active:bg-crumb-surface/10"
+              >
+                <PhoneCall size={18} /> Schedule a call
+              </button>
+              <a
+                href={HEALTHDIRECT_TEL}
+                className="flex h-11 items-center justify-center gap-2 rounded-full text-[14px] text-crumb-surface/85 active:bg-crumb-surface/10"
+              >
+                <Phone size={16} /> Call healthdirect, {HEALTHDIRECT_PHONE}, free 24/7
+              </a>
             </div>
           </section>
 
@@ -279,6 +221,7 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
         )}
       </AnimatePresence>
 
+      <div id={MODAL_LAYER_ID} />
       <CrumbSummaryModal open={summaryOpen} onClose={() => setSummaryOpen(false)} reel={reel} thread={thread} iconStyle={iconStyle} />
       <CareSheet open={care !== null} start={care ?? "choose"} care={thread.care} onClose={() => setCare(null)} />
       <ReviewSheet
@@ -328,93 +271,4 @@ function Fold({ title, meta, preview, children }: { title: string; meta?: string
       </AnimatePresence>
     </div>
   );
-}
-
-const RELATION_LABEL = { friend: "Friend", contact: "In your contacts", peer: null } as const;
-const BOUGHT_LABEL = { yes: "Bought it", no: "Didn't buy", considering: "Thinking about it" } as const;
-const VERDICT_LABEL = { worth_it: "Worth it", not_worth_it: "Not worth it", unsure: "Not sure" } as const;
-
-function ReviewRow({ review: r }: { review: Review }) {
-  const [helped, setHelped] = useState(false);
-  const relation = RELATION_LABEL[relationOf(r)];
-  return (
-    <article className="p-3.5">
-      <div className="flex items-center gap-2.5">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={r.mine ? MY_AVATAR : avatarFor(r.author)} alt="" className="size-8 rounded-full object-cover" />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 text-[15px] font-medium">
-            <span className="truncate">{r.author}</span>
-            {r.mine ? <Tag>Waiting for moderation</Tag> : relation && <Tag strong>{relation}</Tag>}
-          </div>
-          <div className="text-[13px] text-crumb-muted">
-            {BOUGHT_LABEL[r.bought]}
-            {r.verdict && ` · ${VERDICT_LABEL[r.verdict]}`} · {r.postedAgo}
-          </div>
-        </div>
-      </div>
-      <p className="mt-2 text-[14px] leading-normal">{r.text}</p>
-      {!r.mine && (
-        <button
-          type="button"
-          onClick={() => setHelped((h) => !h)}
-          aria-pressed={helped}
-          className={"mt-1 -ml-1 flex h-9 items-center gap-1.5 rounded-full px-1 text-[13px] " + (helped ? "text-crumb-ink" : "text-crumb-muted")}
-        >
-          <ThumbsUp size={14} fill={helped ? "currentColor" : "none"} /> Helpful · {r.helpful + (helped ? 1 : 0)}
-        </button>
-      )}
-    </article>
-  );
-}
-
-function Post({ post, reply }: { post: DiscussionPost; reply?: boolean }) {
-  const [voted, setVoted] = useState(false);
-  return (
-    <div className={reply ? "mt-3 border-l border-crumb-hairline-strong pl-3" : "py-3 first:pt-0 last:pb-0"}>
-      <div className="flex items-center gap-2">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={avatarFor(post.author)} alt="" className="size-6 rounded-full object-cover" />
-        <span className="truncate text-[14px] font-medium">{post.author}</span>
-        {post.role && (
-          <span className="flex shrink-0 items-center gap-0.5 text-[13px] font-medium text-[#1f8a65]">
-            <BadgeCheck size={14} /> {post.role}
-          </span>
-        )}
-        {post.isFriend && <Tag strong>Friend</Tag>}
-        <span className="ml-auto shrink-0 text-[13px] text-crumb-muted">{post.postedAgo}</span>
-      </div>
-      <p className="mt-1.5 text-[14px] leading-normal">{post.text}</p>
-      <button
-        type="button"
-        onClick={() => setVoted((v) => !v)}
-        aria-pressed={voted}
-        aria-label={`Upvote, ${post.votes + (voted ? 1 : 0)} votes`}
-        className={"mt-1 -ml-1 flex h-9 items-center gap-1 px-1 text-[13px] " + (voted ? "text-crumb-accent" : "text-crumb-muted")}
-      >
-        <ArrowBigUp size={18} fill={voted ? "currentColor" : "none"} /> {post.votes + (voted ? 1 : 0)}
-      </button>
-      {post.replies?.map((r) => (
-        <Post key={r.id} post={r} reply />
-      ))}
-    </div>
-  );
-}
-
-function Tag({ children, strong }: { children: React.ReactNode; strong?: boolean }) {
-  return (
-    <span
-      className={
-        "shrink-0 rounded-full px-2 py-0.5 text-[12px] font-medium " +
-        (strong ? "bg-crumb-ink text-crumb-surface" : "bg-crumb-surface text-crumb-body ring-1 ring-crumb-hairline")
-      }
-    >
-      {children}
-    </span>
-  );
-}
-
-function joinNames(names: string[]): string {
-  if (names.length <= 1) return names.join("");
-  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
