@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
@@ -17,17 +16,16 @@ import {
   ThumbsUp,
 } from "lucide-react";
 import type { DiscussionPost, Reel, Review, Thread } from "@/lib/types";
-import { peekLines } from "@/lib/playback";
 import { firstSentence } from "@/lib/thread-view";
 import { addMyReview, readMyReviews, relationOf, sortReviews } from "@/lib/my-reviews";
 import { avatarFor, MY_AVATAR } from "@/lib/avatars";
 import { HEALTHDIRECT_PHONE, HEALTHDIRECT_TEL } from "@/lib/data/care";
 import { CrumbGlyph } from "@/components/crumb/CrumbGlyph";
 import { useIconStyle } from "@/components/crumb/SignalIcon";
-import { CommunityRow, CountTag, FindingsList } from "@/components/crumb/Findings";
 import { CareSheet, type CareStart } from "./CareSheet";
 import { ReviewSheet } from "./ReviewSheet";
 import { ThreadHero } from "./ThreadHero";
+import { CrumbSummaryCard, CrumbSummaryModal } from "./CrumbSummary";
 
 // Built for a ~30 second visit, in the widget's visual language: what Crumb
 // found (laid out exactly like the peek card), then the way to a
@@ -46,6 +44,7 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
 
   const [care, setCare] = useState<CareStart | null>(null);
   const [writing, setWriting] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const [mine, setMine] = useState<Review[]>([]);
   const [allReviews, setAllReviews] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -113,26 +112,10 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
         <main className="px-3">
           <ThreadHero thread={thread} reel={reel} backUrl={backUrl} />
 
-          {/* What Crumb found: the peek card, at full size */}
-          <section className="mt-4 rounded-[28px] bg-white p-3">
-            <div className="flex items-center justify-between gap-2 px-1 pt-0.5">
-              <h2 className="flex items-center gap-2 text-[17px] font-medium tracking-[-0.01em]">
-                <CrumbGlyph size={22} />
-                {reel.tier === "flag" ? "Crumb found" : "Crumb noticed"}
-              </h2>
-              <CountTag tier={reel.tier} count={reel.signals.length} />
-            </div>
-            <p className="mt-1 px-1 text-[13px] text-crumb-muted">{peekLines(reel.signals, thread)[0].line}</p>
-            <FindingsList
-              found={reel.signals}
-              thread={thread}
-              iconStyle={iconStyle}
-              hrefFor={(s) => `/reels?reel=${reel.id}&t=${Math.max(0, s.appearsAt - 1).toFixed(1)}`}
-              showQuotes
-              className="mt-2.5"
-            />
-            <CommunityRow thread={thread} iconStyle={iconStyle} className="mt-2" />
-          </section>
+          {/* What Crumb found: one sentence here, the detail one tap away */}
+          <div className="mt-4">
+            <CrumbSummaryCard reel={reel} thread={thread} iconStyle={iconStyle} onOpen={() => setSummaryOpen(true)} />
+          </div>
 
           {/* The way to a professional: the main action */}
           <section ref={careRef} className="mt-3 rounded-[28px] bg-crumb-ink p-5 text-crumb-surface">
@@ -223,18 +206,6 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
           <section className="mt-8">
             <h2 className="px-1 text-[18px] tracking-[-0.01em]">More on this thread</h2>
             <div className="mt-3 divide-y divide-crumb-hairline rounded-[24px] bg-white">
-              <Fold title="About the creator" meta={thread.creator.note}>
-                <dl className="grid grid-cols-3 gap-2 text-center">
-                  <Stat value={String(thread.creator.postsReviewed)} label="posts reviewed" />
-                  <Stat value={String(thread.creator.postsFlagged)} label="with signals" />
-                  <Stat
-                    value={thread.creator.disclosed ? `${thread.creator.disclosed[0]} of ${thread.creator.disclosed[1]}` : "n/a"}
-                    label="ads disclosed"
-                  />
-                </dl>
-                <p className="mt-2 text-[13px] text-crumb-muted">Each post is judged on its own, never as one creator score.</p>
-              </Fold>
-
               {topAnswer && (
                 <Fold
                   title={`Discussion (${discussionCount})`}
@@ -308,6 +279,7 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
         )}
       </AnimatePresence>
 
+      <CrumbSummaryModal open={summaryOpen} onClose={() => setSummaryOpen(false)} reel={reel} thread={thread} iconStyle={iconStyle} />
       <CareSheet open={care !== null} start={care ?? "choose"} care={thread.care} onClose={() => setCare(null)} />
       <ReviewSheet
         open={writing}
@@ -354,15 +326,6 @@ function Fold({ title, meta, preview, children }: { title: string; meta?: string
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
-  );
-}
-
-function Stat({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="rounded-2xl bg-crumb-surface px-1 py-2.5">
-      <dd className="text-[19px] leading-none tracking-[-0.01em] tabular-nums">{value}</dd>
-      <dt className="mt-1 text-[12px] text-crumb-muted">{label}</dt>
     </div>
   );
 }
