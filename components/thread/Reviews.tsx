@@ -55,7 +55,7 @@ export function WhatPeopleSay({
   const { dragged, ...dragHandlers } = useMouseDrag();
 
   return (
-    <section className="mt-8">
+    <section className="mt-7">
       <div className="flex items-baseline justify-between gap-3 px-1">
         <h2 className="text-[18px] tracking-[-0.01em]">What people say</h2>
         <button type="button" onClick={() => setAllOpen(true)} className="h-9 text-[14px] font-medium text-crumb-accent">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { X } from "lucide-react";
@@ -16,6 +16,12 @@ interface Props {
 // outside, tap × or press Escape to close. Long content scrolls inside it.
 export function Modal({ open, title, onClose, children }: Props) {
   const reduce = useReducedMotion();
+  const panel = useRef<HTMLDivElement>(null);
+
+  // Keyboard focus moves into the card once, when it opens
+  useEffect(() => {
+    if (open) panel.current?.focus({ preventScroll: true });
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -41,10 +47,12 @@ export function Modal({ open, title, onClose, children }: Props) {
         >
           <div className="absolute inset-0 bg-crumb-ink/35" onClick={onClose} aria-hidden />
           <motion.div
+            ref={panel}
+            tabIndex={-1}
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            className="relative flex max-h-full w-full flex-col overflow-hidden rounded-[28px] bg-crumb-surface text-crumb-ink"
+            className="relative flex max-h-full w-full flex-col overflow-hidden rounded-[28px] bg-crumb-surface text-crumb-ink outline-none"
             initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: 12 }}
             animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: 6 }}

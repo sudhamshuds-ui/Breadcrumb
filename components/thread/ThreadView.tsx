@@ -78,20 +78,20 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
     <div className="crumb-type absolute inset-0 text-crumb-ink" style={{ background: SURFACE }}>
       <div ref={scrollRef} className="absolute inset-0 overflow-y-auto overscroll-contain pb-[calc(96px+env(safe-area-inset-bottom))]">
         <header
-          className="sticky top-0 z-20 flex items-center justify-between border-b border-black/5 px-2 pb-2"
+          className="sticky top-0 z-20 grid grid-cols-[1fr_auto_1fr] items-center border-b border-black/5 px-2 pb-2"
           style={{ paddingTop: "calc(var(--top-inset) + 4px)", background: SURFACE }}
         >
           <button
             type="button"
             onClick={goBack}
-            className="flex h-10 items-center gap-0.5 rounded-full pr-3 pl-1 text-[15px] active:bg-crumb-hairline"
+            className="flex h-10 items-center gap-0.5 justify-self-start rounded-full pr-3 pl-1 text-[15px] active:bg-crumb-hairline"
           >
             <ChevronLeft size={22} /> Reel
           </button>
           <span className="flex items-center gap-1.5 text-[15px] font-medium">
             <CrumbGlyph size={22} body="#0A0A0A" face={SURFACE} /> Breadcrumb
           </span>
-          <span className="w-[72px]" aria-hidden />
+          <span aria-hidden />
         </header>
 
         <main className="px-3">
@@ -109,7 +109,7 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
           {/* The way to a professional: the main action, last */}
           <CareCard thread={thread} onStart={setCare} cardRef={careRef} />
 
-          <p className="mt-8 mb-4 text-center text-[13px] leading-normal text-crumb-muted [text-wrap:balance]">
+          <p className="mt-7 mb-4 px-2 text-center text-[13px] leading-normal text-crumb-muted [text-wrap:balance]">
             Moderated thread, checked {thread.lastModerated}. Breadcrumb shares what people and sources say; it doesn&apos;t give
             medical advice.
           </p>

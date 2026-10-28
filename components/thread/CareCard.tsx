@@ -19,7 +19,7 @@ export function CareCard({
   cardRef?: React.Ref<HTMLElement>;
 }) {
   return (
-    <section ref={cardRef} className="mt-3">
+    <section ref={cardRef} className="mt-4">
       <button
         type="button"
         onClick={() => onStart("choose")}
