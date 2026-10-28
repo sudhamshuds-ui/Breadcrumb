@@ -2,18 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import {
-  ArrowUpRight,
   CalendarCheck,
-  ChevronDown,
   ChevronLeft,
   Phone,
   PhoneCall,
   SquarePen,
 } from "lucide-react";
 import type { Reel, Review, Thread } from "@/lib/types";
-import { firstSentence } from "@/lib/thread-view";
 import { addMyReview, readMyReviews } from "@/lib/my-reviews";
 import { HEALTHDIRECT_PHONE, HEALTHDIRECT_TEL } from "@/lib/data/care";
 import { CrumbGlyph } from "@/components/crumb/CrumbGlyph";
@@ -21,6 +18,7 @@ import { useIconStyle } from "@/components/crumb/SignalIcon";
 import { CareSheet, type CareStart } from "./CareSheet";
 import { ReviewSheet } from "./ReviewSheet";
 import { WhatPeopleSay } from "./Reviews";
+import { ResourcesCard } from "./Resources";
 import { MODAL_LAYER_ID } from "./Modal";
 import { ThreadHero } from "./ThreadHero";
 import { CrumbSummaryCard, CrumbSummaryModal } from "./CrumbSummary";
@@ -109,30 +107,7 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
 
           <WhatPeopleSay thread={thread} mine={mine} onWrite={() => setWriting(true)} />
 
-          {/* Sources: the takeaway up front, the detail one tap away */}
-          <section className="mt-8">
-            <h2 className="px-1 text-[18px] tracking-[-0.01em]">What the evidence says</h2>
-            <div className="mt-3 divide-y divide-crumb-hairline rounded-[24px] bg-white">
-              {thread.sources.map((src) => (
-                <Fold
-                  key={src.url}
-                  title={src.title}
-                  meta={[src.type, src.publisher, src.year].filter(Boolean).join(" · ")}
-                  preview={firstSentence(src.summary)}
-                >
-                  <p className="text-[14px] leading-normal text-crumb-body">{src.summary}</p>
-                  <a
-                    href={src.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-flex h-9 items-center gap-1 text-[14px] font-medium text-crumb-accent"
-                  >
-                    Read the source <ArrowUpRight size={15} />
-                  </a>
-                </Fold>
-              ))}
-            </div>
-          </section>
+          <ResourcesCard thread={thread} />
 
           {/* The way to a professional: the main action, last */}
           <section ref={careRef} className="mt-8 rounded-[28px] bg-crumb-ink p-5 text-crumb-surface">
@@ -238,37 +213,3 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
   );
 }
 
-// A row that opens in place. One tap deep, never more.
-function Fold({ title, meta, preview, children }: { title: string; meta?: string; preview?: string; children: React.ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const reduce = useReducedMotion();
-  return (
-    <div>
-      <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex w-full gap-3 p-3.5 text-left">
-        <span className="min-w-0 flex-1">
-          <span className="block text-[15px] leading-snug font-medium">{title}</span>
-          {meta && <span className="mt-0.5 block text-[13px] text-crumb-muted">{meta}</span>}
-          {preview && !open && <span className="mt-1 line-clamp-2 block text-[14px] leading-snug text-crumb-body">{preview}</span>}
-        </span>
-        <ChevronDown
-          size={18}
-          className="mt-0.5 shrink-0 text-crumb-muted transition-transform duration-200"
-          style={{ transform: open ? "rotate(180deg)" : undefined }}
-        />
-      </button>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            initial={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
-            animate={reduce ? { opacity: 1 } : { height: "auto", opacity: 1 }}
-            exit={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="px-3.5 pb-3.5">{children}</div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}

@@ -150,14 +150,14 @@ export function CrumbSummaryModal({
   );
 }
 
-function FoldCard({
+export function FoldCard({
   title,
   mark,
   open,
   onToggle,
   children,
 }: {
-  title: string;
+  title: React.ReactNode;
   mark: React.ReactNode;
   open: boolean;
   onToggle: () => void;
