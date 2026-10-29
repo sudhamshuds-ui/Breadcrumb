@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ArrowUpRight } from "lucide-react";
 import type { Reel, SignalKind, SummaryPart, Thread } from "@/lib/types";
 import { CrumbGlyph } from "@/components/crumb/CrumbGlyph";
 import { EVIDENCE_ILLUSTRATION, illustrationFor } from "@/components/crumb/illustrations";
@@ -55,15 +54,10 @@ export function CrumbSummaryCard({
       onClick={onOpen}
       className="block w-full rounded-[28px] bg-white px-3.5 pt-3.5 pb-6 text-left transition-transform duration-150 active:scale-[0.99]"
     >
-      <span className="flex items-center justify-between gap-2 py-0.5 pr-0.5 pl-1.5">
-        <span className="flex items-center gap-2 text-[17px] font-medium tracking-[-0.01em]">
-          <CrumbGlyph size={22} /> Crumb summary
-        </span>
-        <span className="flex size-9 items-center justify-center rounded-full bg-crumb-surface text-crumb-body" aria-hidden>
-          <ArrowUpRight size={18} />
-        </span>
+      <span className="flex items-center gap-2.5 px-1.5 pt-1 text-[24px] leading-tight tracking-[-0.02em]">
+        <CrumbGlyph size={26} /> Crumb summary
       </span>
-      <span className="mt-5 block px-1.5 text-[19px] leading-[1.4] tracking-[-0.015em] text-crumb-muted [text-wrap:pretty]">
+      <span className="mt-3 block px-1.5 text-[19px] leading-[1.4] tracking-[-0.015em] text-crumb-muted [text-wrap:pretty]">
         {parts.map((p, i) =>
           typeof p === "string" ? (
             <span key={i}>{p}</span>

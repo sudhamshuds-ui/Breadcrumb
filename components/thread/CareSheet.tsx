@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { CalendarCheck, ChevronLeft, ChevronRight, Headset, MapPin, PhoneCall, Stethoscope } from "lucide-react";
+import { CalendarCheck, CaretLeft, CaretRight, Headset, MapPin, PhoneCall, Stethoscope } from "@phosphor-icons/react";
 import type { CareTopic } from "@/lib/types";
 import { CALL_TIMES, CLINICS, HEALTHDIRECT_PHONE, HEALTHDIRECT_TEL, SLOT_DAYS, SLOT_TIMES, type Clinic } from "@/lib/data/care";
 import { Modal } from "./Modal";
@@ -49,7 +49,7 @@ export function CareSheet({ open, start, care, onClose }: Props) {
     <Modal open={open} title={title} onClose={onClose}>
       {back && (
         <button type="button" onClick={back} className="-mt-1 mb-2 flex items-center gap-0.5 text-[14px] text-crumb-body">
-          <ChevronLeft size={16} /> Back
+          <CaretLeft size={16} /> Back
         </button>
       )}
 
@@ -65,16 +65,16 @@ export function CareSheet({ open, start, care, onClose }: Props) {
           {step.name === "choose" && (
             <div className="flex flex-col gap-2.5">
               <p className="mb-1 px-1.5 text-[14px] leading-normal text-crumb-body">{care.first}</p>
-              <Option tone="primary" icon={<Stethoscope size={21} />} title="Book a GP appointment" sub="Clinics near you, times this week" onClick={() => setStep({ name: "clinic" })} />
-              <Option tone="blue" icon={<PhoneCall size={20} />} title="Schedule a call" sub={`With a ${care.professionals.map(lower).join(" or ")}`} onClick={() => setStep({ name: "call" })} />
-              <Option tone="green" icon={<Headset size={20} />} title="Call healthdirect" sub={`${HEALTHDIRECT_PHONE} · free, 24/7`} href={HEALTHDIRECT_TEL} />
+              <Option tone="primary" icon={<Stethoscope size={22} weight="duotone" />} title="Book a GP appointment" sub="Clinics near you, times this week" onClick={() => setStep({ name: "clinic" })} />
+              <Option tone="blue" icon={<PhoneCall size={21} weight="duotone" />} title="Schedule a call" sub={`With a ${care.professionals.map(lower).join(" or ")}`} onClick={() => setStep({ name: "call" })} />
+              <Option tone="green" icon={<Headset size={21} weight="duotone" />} title="Call healthdirect" sub={`${HEALTHDIRECT_PHONE} · free, 24/7`} href={HEALTHDIRECT_TEL} />
             </div>
           )}
 
           {step.name === "clinic" && (
             <div className="flex flex-col gap-2.5">
               <p className="mb-1 flex items-center gap-1.5 px-1.5 text-[13px] text-crumb-muted">
-                <MapPin size={14} /> Near Marrickville NSW
+                <MapPin size={15} weight="duotone" /> Near Marrickville NSW
               </p>
               {CLINICS.map((c) => (
                 <ClinicRow key={c.id} clinic={c} onClick={() => setStep({ name: "slot", clinic: c })} />
@@ -140,7 +140,7 @@ export function CareSheet({ open, start, care, onClose }: Props) {
                     className="flex h-12 items-center justify-between rounded-2xl bg-crumb-card px-4 text-[15px] ring-1 ring-crumb-hairline active:ring-crumb-accent"
                   >
                     {when}
-                    <ChevronRight size={16} className="text-crumb-muted" />
+                    <CaretRight size={16} className="text-crumb-muted" />
                   </button>
                 ))}
               </div>
@@ -155,7 +155,7 @@ export function CareSheet({ open, start, care, onClose }: Props) {
                 animate={{ scale: 1 }}
                 transition={{ type: "spring", stiffness: 500, damping: 22 }}
               >
-                <CalendarCheck size={26} />
+                <CalendarCheck size={28} weight="duotone" />
               </motion.span>
               <p className="mt-4 text-[18px] tracking-[-0.01em]">{step.what}</p>
               <p className="mt-1 text-[15px] text-crumb-body">{step.when}</p>
@@ -214,7 +214,7 @@ function Option({
         <span className="block text-[15.5px] font-medium">{title}</span>
         <span className={"block truncate text-[13px] " + t.sub}>{sub}</span>
       </span>
-      <ChevronRight size={18} className={"shrink-0 " + t.chevron} />
+      <CaretRight size={18} className={"shrink-0 " + t.chevron} />
     </>
   );
   const cls = "flex items-center gap-3 rounded-[22px] p-3 transition-colors " + t.card;
@@ -245,7 +245,7 @@ function ClinicRow({ clinic: c, onClick }: { clinic: Clinic; onClick: () => void
           <BillingTag billing={c.billing} />
         </span>
       </span>
-      <ChevronRight size={18} className="shrink-0 text-crumb-muted" />
+      <CaretRight size={18} className="shrink-0 text-crumb-muted" />
     </button>
   );
 }

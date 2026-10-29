@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "@phosphor-icons/react";
 import type { Source, Thread } from "@/lib/types";
 import { IllustratedCard } from "./CrumbSummary";
 import { CardBanner } from "./CardBanner";

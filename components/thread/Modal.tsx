@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { X } from "lucide-react";
+import { X } from "@phosphor-icons/react";
 
 interface Props {
   open: boolean;
@@ -57,12 +57,19 @@ export function Modal({ open, title, onClose, children }: Props) {
           key="modal"
           ref={backdrop}
           className="absolute inset-0 z-50 flex items-center justify-center px-3 pt-[calc(var(--top-inset)+12px)] pb-[max(16px,env(safe-area-inset-bottom))]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.18 }}
         >
-          <div className="absolute inset-0 bg-crumb-ink/35" onClick={onClose} aria-hidden />
+          {/* The blur and the dim fade in together. The blur is animated on
+              this layer itself: fading a parent instead makes browsers skip
+              the blur until the fade ends, so it snaps in. */}
+          <motion.div
+            className="absolute inset-0"
+            initial={{ backdropFilter: "blur(0px)", backgroundColor: "rgba(38, 37, 30, 0)" }}
+            animate={{ backdropFilter: "blur(8px)", backgroundColor: "rgba(38, 37, 30, 0.25)" }}
+            exit={{ backdropFilter: "blur(0px)", backgroundColor: "rgba(38, 37, 30, 0)" }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            onClick={onClose}
+            aria-hidden
+          />
           <motion.div
             ref={panel}
             tabIndex={-1}

@@ -12,14 +12,14 @@ export function ThreadHero({ thread, reel, backUrl }: { thread: Thread; reel: Re
       <Link
         href={backUrl}
         replace
-        className="flex h-8 items-center gap-1.5 rounded-full pr-2.5 pl-1 text-[13.5px] text-crumb-body active:bg-black/5"
+        className="flex h-11 items-center gap-1.5 rounded-full pr-2.5 pl-1 text-[13.5px] text-crumb-body active:bg-black/5"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={reel.creator.avatar} alt="" className="size-6 rounded-full object-cover" />
         {reel.creator.handle}
       </Link>
 
-      <h1 className="mt-2 text-[32px] leading-[1.08] tracking-[-0.03em] [text-wrap:balance]">{thread.productName}</h1>
+      <h1 className="mt-0.5 text-[32px] leading-[1.08] tracking-[-0.03em] [text-wrap:balance]">{thread.productName}</h1>
     </section>
   );
 }

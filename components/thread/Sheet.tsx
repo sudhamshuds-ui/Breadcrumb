@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { X } from "lucide-react";
+import { X } from "@phosphor-icons/react";
 
 interface Props {
   open: boolean;
@@ -19,11 +19,11 @@ export function Sheet({ open, title, onClose, children }: Props) {
       {open && (
         <motion.div
           key="scrim"
-          className="absolute inset-0 z-40 bg-crumb-ink/30"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          className="absolute inset-0 z-40"
+          initial={{ backdropFilter: "blur(0px)", backgroundColor: "rgba(38, 37, 30, 0)" }}
+          animate={{ backdropFilter: "blur(8px)", backgroundColor: "rgba(38, 37, 30, 0.25)" }}
+          exit={{ backdropFilter: "blur(0px)", backgroundColor: "rgba(38, 37, 30, 0)" }}
+          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           onClick={onClose}
         />
       )}

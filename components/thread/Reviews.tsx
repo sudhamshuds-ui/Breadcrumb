@@ -1,17 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import {
-  ArrowBigUp,
-  ArrowUp,
-  BadgeCheck,
-  CircleHelp,
-  MessageCircle,
-  SquarePen,
-  ThumbsDown,
-  ThumbsUp,
-  type LucideIcon,
-} from "lucide-react";
+import { ArrowFatUp, ArrowUp, ChatCircle, PencilSimpleLine, Question, SealCheck, ThumbsDown, ThumbsUp, type Icon } from "@phosphor-icons/react";
 import type { DiscussionPost, Review, Thread } from "@/lib/types";
 import { sortReviews } from "@/lib/my-reviews";
 import { addMyReply, readMyReplies } from "@/lib/my-replies";
@@ -32,10 +22,10 @@ export function voicesFor(thread: Thread, mine: Review[]): Voice[] {
   return [...pros, ...reviews];
 }
 
-const VERDICT: Record<NonNullable<Review["verdict"]>, { text: string; icon: LucideIcon; color: string }> = {
+const VERDICT: Record<NonNullable<Review["verdict"]>, { text: string; icon: Icon; color: string }> = {
   worth_it: { text: "Worth it", icon: ThumbsUp, color: "#1F6B4A" },
   not_worth_it: { text: "Not worth it", icon: ThumbsDown, color: "#A61B1B" },
-  unsure: { text: "Not sure", icon: CircleHelp, color: "#6e6b62" },
+  unsure: { text: "Not sure", icon: Question, color: "#6e6b62" },
 };
 const BOUGHT_LABEL = { yes: "Bought it", no: "Didn't buy", considering: "Thinking about it" } as const;
 
@@ -56,9 +46,9 @@ export function WhatPeopleSay({
 
   return (
     <section className="mt-7">
-      <div className="flex items-baseline justify-between gap-3 px-1">
-        <h2 className="text-[18px] tracking-[-0.01em]">What people say</h2>
-        <button type="button" onClick={() => setAllOpen(true)} className="h-9 text-[14px] font-medium text-crumb-accent">
+      <div className="flex items-center justify-between gap-3 px-1">
+        <h2 className="text-[24px] leading-tight tracking-[-0.02em]">What people say</h2>
+        <button type="button" onClick={() => setAllOpen(true)} className="-mr-1 h-11 px-1 text-[14px] font-medium text-crumb-accent">
           View all
         </button>
       </div>
@@ -127,7 +117,7 @@ function VoiceHeader({ voice: v }: { voice: Voice }) {
 function Verified({ role }: { role?: string }) {
   return (
     <span className="flex items-center gap-1 text-[13px] font-medium text-[#1f8a65]">
-      <BadgeCheck size={14} /> Verified {role?.toLowerCase()}
+      <SealCheck size={15} weight="duotone" /> Verified {role?.toLowerCase()}
     </span>
   );
 }
@@ -138,11 +128,11 @@ function VoiceFooter({ voice: v }: { voice: Voice }) {
     return (
       <span className="flex items-center gap-3 text-[13px] text-crumb-muted">
         <span className="flex items-center gap-1">
-          <ArrowBigUp size={16} /> {v.post.votes}
+          <ArrowFatUp size={15} /> {v.post.votes}
         </span>
         {replies > 0 && (
           <span className="flex items-center gap-1">
-            <MessageCircle size={14} /> {replies} {replies === 1 ? "reply" : "replies"}
+            <ChatCircle size={14} /> {replies} {replies === 1 ? "reply" : "replies"}
           </span>
         )}
       </span>
@@ -154,7 +144,7 @@ function VoiceFooter({ voice: v }: { voice: Voice }) {
         "Waiting for moderation"
       ) : (
         <>
-          <ThumbsUp size={13} /> {v.review.helpful} found helpful
+          <ThumbsUp size={14} /> {v.review.helpful} found helpful
         </>
       )}
     </span>
@@ -249,7 +239,7 @@ function VoiceFull({ voice: v, threadId, replyOpen = false }: { voice: Voice; th
             aria-label="Send reply"
             className="flex size-10 shrink-0 items-center justify-center rounded-full bg-crumb-accent text-white transition-opacity disabled:opacity-30"
           >
-            <ArrowUp size={18} />
+            <ArrowUp size={18} weight="bold" />
           </button>
         </form>
       )}
@@ -264,7 +254,7 @@ function ReviewChips({ review: r }: { review: Review }) {
     <div className="mt-2.5 flex flex-wrap gap-1.5 text-[13px] font-medium">
       {verdict && (
         <span className="flex items-center gap-1 rounded-full bg-crumb-surface px-2.5 py-1" style={{ color: verdict.color }}>
-          <verdict.icon size={13} /> {verdict.text}
+          <verdict.icon size={14} weight="duotone" /> {verdict.text}
         </span>
       )}
       <span className="rounded-full bg-crumb-surface px-2.5 py-1 text-crumb-body">{BOUGHT_LABEL[r.bought]}</span>
@@ -282,7 +272,7 @@ function Actions({ onReply, children }: { onReply: () => void; children?: React.
         onClick={onReply}
         className="flex h-9 items-center gap-1 px-1 text-[13.5px] font-medium text-crumb-muted active:text-crumb-ink"
       >
-        <MessageCircle size={14} /> Reply
+        <ChatCircle size={14} /> Reply
       </button>
     </div>
   );
@@ -331,7 +321,7 @@ function Helpful({ review }: { review: Review }) {
       aria-pressed={helped}
       className={"flex h-9 items-center gap-1.5 px-1 text-[13.5px] " + (helped ? "text-crumb-ink" : "text-crumb-muted")}
     >
-      <ThumbsUp size={14} fill={helped ? "currentColor" : "none"} /> Helpful · {review.helpful + (helped ? 1 : 0)}
+      <ThumbsUp size={15} weight={helped ? "fill" : "regular"} /> Helpful · {review.helpful + (helped ? 1 : 0)}
     </button>
   );
 }
@@ -346,7 +336,7 @@ function Upvote({ post }: { post: DiscussionPost }) {
       aria-label={`Upvote, ${post.votes + (voted ? 1 : 0)} votes`}
       className={"flex h-9 items-center gap-1 px-1 text-[13.5px] " + (voted ? "text-crumb-accent" : "text-crumb-muted")}
     >
-      <ArrowBigUp size={18} fill={voted ? "currentColor" : "none"} /> {post.votes + (voted ? 1 : 0)}
+      <ArrowFatUp size={17} weight={voted ? "fill" : "regular"} /> {post.votes + (voted ? 1 : 0)}
     </button>
   );
 }
@@ -401,7 +391,7 @@ function AllReviewsModal({
           onClick={onWrite}
           className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-crumb-surface text-[14.5px] font-medium active:bg-crumb-hairline"
         >
-          <SquarePen size={16} /> Write a review
+          <PencilSimpleLine size={17} /> Write a review
         </button>
       </div>
 

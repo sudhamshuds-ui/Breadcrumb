@@ -3,10 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "motion/react";
-import {
-  ChevronLeft,
-  SquarePen,
-} from "lucide-react";
+import { CaretLeft, PencilSimpleLine } from "@phosphor-icons/react";
 import type { Reel, Review, Thread } from "@/lib/types";
 import { addMyReview, readMyReviews } from "@/lib/my-reviews";
 import { CrumbGlyph } from "@/components/crumb/CrumbGlyph";
@@ -84,7 +81,7 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
             onClick={goBack}
             className="flex h-10 items-center gap-0.5 justify-self-start rounded-full pr-3 pl-1 text-[15px] active:bg-crumb-hairline"
           >
-            <ChevronLeft size={22} /> Reel
+            <CaretLeft size={22} /> Reel
           </button>
           <span className="flex items-center gap-1.5 text-[15px] font-medium">
             <CrumbGlyph size={22} body="#0A0A0A" face={SURFACE} /> Breadcrumb
@@ -141,7 +138,7 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
                 aria-label="Write a review"
                 className="flex size-12 items-center justify-center rounded-full bg-white active:bg-crumb-hairline"
               >
-                <SquarePen size={18} />
+                <PencilSimpleLine size={19} />
               </button>
             </div>
           </motion.div>

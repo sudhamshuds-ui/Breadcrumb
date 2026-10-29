@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { CaretLeft } from "@phosphor-icons/react";
 import { getThread } from "@/lib/data/threads";
 import { CrumbGlyph } from "@/components/crumb/CrumbGlyph";
 
@@ -16,7 +16,7 @@ export function ThreadStub() {
     <div className="crumb-type absolute inset-0 flex flex-col bg-crumb-surface text-crumb-ink">
       <div className="flex items-center gap-2 px-3 pt-14 pb-3">
         <Link href={back} className="flex h-11 items-center gap-0.5 rounded-full pr-4 text-[15px] font-medium active:bg-crumb-hairline">
-          <ChevronLeft size={22} /> Back to reel
+          <CaretLeft size={22} /> Back to reel
         </Link>
       </div>
       <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
