@@ -132,7 +132,7 @@ export function CrumbWidget(props: Props) {
               chip={chip}
               iconStyle={iconStyle}
               disabled={off || hidden}
-              onTap={props.onOpen}
+              onTap={glowMode === "scanning" ? () => {} : props.onOpen}
               onHold={props.onTurnOff}
             />
           )}
@@ -404,7 +404,7 @@ function Card({
       role="dialog"
       aria-label={empty ? "Nothing flagged yet" : "What Crumb found"}
       className="crumb-type absolute bottom-0 left-0 overflow-hidden text-crumb-ink"
-      style={{ width: empty ? 300 : "min(366px, calc(100vw - 24px))", borderRadius: 28, background: "#FFFFFF" }}
+      style={{ width: empty ? "min(320px, calc(100vw - 24px))" : "min(366px, calc(100vw - 24px))", borderRadius: 28, background: "#FFFFFF" }}
       transition={SPRING}
       drag="y"
       dragConstraints={{ top: 0, bottom: 0 }}
@@ -419,17 +419,27 @@ function Card({
         exit={{ opacity: 0, transition: { duration: 0.08 } }}
       >
         {empty ? (
-          <div className="flex items-start gap-3 p-4 pr-2">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-full" style={{ background: SURFACE }}>
-              <CrumbGlyph size={22} body="#0A0A0A" face={SURFACE} />
+          // Figma "peek card no flag" (1470-492): the empty box with the bread
+          // logo and × over it, then what Crumb has (not) found.
+          <div className="relative p-3 pb-5">
+            {/* The whole picture, a little smaller than the card, centred; its own
+                white margin gives the breathing room */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/illustrations/nothing-flagged.webp" alt="" className="mx-auto mt-1 block w-[85%]" />
+            <span
+              className="absolute top-3 left-3 flex size-11 items-center justify-center rounded-full"
+              style={{ background: SURFACE }}
+              aria-hidden
+            >
+              <CrumbGlyph size={24} body="#0A0A0A" face={SURFACE} />
             </span>
-            <div className="pt-0.5">
-              <p className="text-[16px] font-medium tracking-[-0.01em]">Nothing flagged yet</p>
-              <p className="mt-1 text-[13.5px] leading-snug text-crumb-body">
-                Crumb hasn&apos;t found money or health-claim signals in this reel so far.
-              </p>
-            </div>
-            <CloseButton onClose={onClose} />
+            <span className="absolute top-3 right-2">
+              <CloseButton onClose={onClose} />
+            </span>
+            <p className="relative -mt-10 px-2 text-[19px] leading-tight font-medium tracking-[-0.015em]">Nothing flagged yet</p>
+            <p className="mt-1.5 px-2 text-[14.5px] leading-snug text-crumb-body">
+              Crumb hasn&apos;t found money or health-claim signals in this reel so far.
+            </p>
           </div>
         ) : (
           // Figma "peek card new" (1482-826): what Crumb found as one picture
