@@ -18,7 +18,20 @@ export const threads: Thread[] = [
     },
     evidenceNote:
       "Weight-loss medicines worked for many people in trials, alongside diet and activity. They need a prescription, regular check-ins and can have side effects.",
+    summary: [
+      "This reel is a ",
+      { text: "paid partnership", mark: "paid_partnership" },
+      " for ",
+      { text: "weight-loss medicine", mark: "product_mention" },
+      ", with a ",
+      { text: "price offer", mark: "discount_code" },
+      ". Evidence is ",
+      { text: "mixed", mark: "evidence" },
+      ".",
+    ],
     friendNames: ["Priya", "Tom"],
+    reviewSummary:
+      "Most say it can work, but to talk to a GP first and plan for the ongoing cost and side effects.",
     creator: {
       postsReviewed: 23,
       postsFlagged: 14,
@@ -82,6 +95,12 @@ export const threads: Thread[] = [
         summary:
           "In 1,961 adults over 68 weeks, people on weekly semaglutide lost about 15% of their body weight on average, compared with about 2% on placebo. Nausea and other stomach side effects were common, and the drug's maker funded the trial.",
         url: "https://pubmed.ncbi.nlm.nih.gov/33567185/",
+        highlight: {
+          value: "15%",
+          label: "average body weight lost over 68 weeks",
+          compare: { value: "2%", label: "on placebo" },
+        },
+        image: "/thread/t1-trial.jpg",
       },
       {
         title: "Weight loss medicine",
@@ -90,6 +109,7 @@ export const threads: Thread[] = [
         summary:
           "Explains the prescription weight-loss medicines used in Australia and their common digestive side effects. It also notes they aren't currently covered by Medicare.",
         url: "https://www.healthdirect.gov.au/weight-loss-medicine",
+        image: "/thread/health-service.jpg",
       },
       {
         title: "TGA warns of online semaglutide scams",
@@ -98,6 +118,7 @@ export const threads: Thread[] = [
         summary:
           "Australia's medicines regulator found some weight-loss injections sold online didn't contain what the label said. It advises getting them only through a pharmacy with a valid prescription.",
         url: "https://www1.racgp.org.au/newsgp/clinical/tga-warns-of-online-semaglutide-scams",
+        image: "/thread/regulator.jpg",
       },
     ],
     discussion: [
@@ -157,7 +178,18 @@ export const threads: Thread[] = [
     },
     evidenceNote:
       "Lab and mouse studies suggest sulforaphane can calm skin inflammation, but we found no human trials in psoriasis. The foundation's seal checks that a product is gentle on skin, not that it treats psoriasis.",
+    summary: [
+      "This reel is a ",
+      { text: "paid partnership", mark: "paid_partnership" },
+      " that makes ",
+      { text: "two health claims", mark: "health_claim" },
+      ", about a foundation's seal and clearer skin. No ",
+      { text: "supporting evidence", mark: "evidence" },
+      " is linked.",
+    ],
     friendNames: ["Jess", "Sam", "Ana"],
+    reviewSummary:
+      "Most say to talk to a GP or dermatologist first, and that the foundation's seal doesn't mean it treats psoriasis.",
     creator: {
       postsReviewed: 41,
       postsFlagged: 29,
@@ -220,6 +252,7 @@ export const threads: Thread[] = [
         summary:
           "In mice with psoriasis-like skin, sulforaphane reduced skin lesions and inflammation. It's an animal study, so it doesn't show the same effect in people.",
         url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8814458/",
+        image: "/thread/t2-lab.jpg",
       },
       {
         title: "Seal of Recognition review process",
@@ -228,6 +261,7 @@ export const threads: Thread[] = [
         summary:
           "The seal goes to products shown to be non-irritating and safe for people with psoriasis. It doesn't mean a product treats or improves psoriasis.",
         url: "https://www.psoriasis.org/seal-of-recognition-review-process/",
+        image: "/thread/t2-seal.jpg",
       },
       {
         title: "Medicines for psoriasis",
@@ -236,6 +270,7 @@ export const threads: Thread[] = [
         summary:
           "Covers treatments with good evidence, from creams to light therapy and prescription medicines. A GP or dermatologist can match treatment to how severe it is.",
         url: "https://www.healthdirect.gov.au/medicines-for-psoriasis",
+        image: "/thread/health-service.jpg",
       },
     ],
     discussion: [
@@ -296,7 +331,18 @@ export const threads: Thread[] = [
     moneyNote: "Offers 1-on-1 coaching in the caption",
     evidenceNote:
       "Creatine is well studied for strength training. The other claims are weaker: vitamin D didn't raise testosterone in a trial of men with low levels, and magnesium's sleep benefit comes from a few small trials.",
+    summary: [
+      "This reel ",
+      { text: "offers coaching", mark: "product_mention" },
+      " and makes ",
+      { text: "two health claims", mark: "health_claim" },
+      ", about cortisol and testosterone. Evidence is ",
+      { text: "mixed", mark: "evidence" },
+      ".",
+    ],
     friendNames: ["Tom"],
+    reviewSummary:
+      "Most say creatine is well studied, but to get a blood test before taking vitamin D for testosterone.",
     creator: {
       postsReviewed: 12,
       postsFlagged: 3,
@@ -342,15 +388,6 @@ export const threads: Thread[] = [
     ],
     sources: [
       {
-        title: "Position stand: safety and efficacy of creatine supplementation in exercise, sport and medicine",
-        publisher: "Journal of the International Society of Sports Nutrition",
-        type: "Position stand",
-        year: "2017",
-        summary:
-          "An expert review concluding that creatine monohydrate reliably improves gains from high-intensity training. It found no good evidence of harm in healthy people at recommended doses.",
-        url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC5469049/",
-      },
-      {
         title: "Effects of vitamin D supplementation on androgens in men with low testosterone levels",
         publisher: "European Journal of Nutrition",
         type: "Clinical trial",
@@ -358,6 +395,18 @@ export const threads: Thread[] = [
         summary:
           "In 100 men with low testosterone, 12 weeks of vitamin D didn't change testosterone compared with placebo.",
         url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC6842386/",
+        highlight: { value: "No change", label: "in testosterone after 12 weeks of vitamin D, compared with placebo" },
+        image: "/thread/t4-vitamin-d.jpg",
+      },
+      {
+        title: "Position stand: safety and efficacy of creatine supplementation in exercise, sport and medicine",
+        publisher: "Journal of the International Society of Sports Nutrition",
+        type: "Position stand",
+        year: "2017",
+        summary:
+          "An expert review concluding that creatine monohydrate reliably improves gains from high-intensity training. It found no good evidence of harm in healthy people at recommended doses.",
+        url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC5469049/",
+        image: "/thread/t4-creatine.jpg",
       },
       {
         title: "Oral magnesium supplementation for insomnia in older adults",
@@ -367,6 +416,8 @@ export const threads: Thread[] = [
         summary:
           "Across three small trials, magnesium helped older adults fall asleep about 17 minutes faster. The authors rated the evidence as low quality.",
         url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8053283/",
+        highlight: { value: "17 min", label: "faster to fall asleep on average, across three small trials" },
+        image: "/thread/t4-magnesium.jpg",
       },
       {
         title: "Omega-3 fatty acids for the primary and secondary prevention of cardiovascular disease",
@@ -376,6 +427,7 @@ export const threads: Thread[] = [
         summary:
           "Across 86 trials, omega-3 supplements had little or no effect on deaths or most heart problems. There was a small drop in coronary heart disease events.",
         url: "https://pubmed.ncbi.nlm.nih.gov/32114706/",
+        image: "/thread/t4-omega3.jpg",
       },
     ],
     discussion: [
@@ -419,7 +471,18 @@ export const threads: Thread[] = [
     moneyNote: "Ad posted by the brand itself",
     evidenceNote:
       "Probiotics improved some gut and immune measures in healthy adults, but changes were often temporary. We found no published studies on these products' energy or sleep claims.",
+    summary: [
+      "This is the ",
+      { text: "brand's own ad", mark: "product_mention" },
+      ", with a ",
+      { text: "claim about energy and sleep", mark: "health_claim" },
+      ". Evidence is ",
+      { text: "mixed", mark: "evidence" },
+      ".",
+    ],
     friendNames: [],
+    reviewSummary:
+      "Only a few reviews so far: people found it hard to tell what it did, and want a study on the product itself.",
     creator: {
       postsReviewed: 6,
       postsFlagged: 0,
@@ -461,6 +524,8 @@ export const threads: Thread[] = [
         summary:
           "Looking at 45 studies in healthy adults, probiotics improved some immune and bowel measures. Changes to gut bacteria were often temporary.",
         url: "https://pubmed.ncbi.nlm.nih.gov/29581563/",
+        highlight: { value: "45", label: "studies in healthy adults: some immune and bowel measures improved" },
+        image: "/thread/t5-probiotics.jpg",
       },
       {
         title: "Questions and answers on dietary supplements",
@@ -469,6 +534,7 @@ export const threads: Thread[] = [
         summary:
           "Explains that supplements don't need approval before they're sold. The 'not evaluated by the FDA' line means the claim hasn't been reviewed.",
         url: "https://www.fda.gov/food/information-consumers-using-dietary-supplements/questions-and-answers-dietary-supplements",
+        image: "/thread/regulator.jpg",
       },
     ],
     discussion: [

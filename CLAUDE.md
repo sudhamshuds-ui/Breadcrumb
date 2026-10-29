@@ -237,7 +237,7 @@ When rebuilding UI from Figma: "Keep everything in `lib/` untouched."
 
 ---
 
-## Current status (updated 2026-10-09)
+## Current status (updated 2026-10-29)
 
 Live: https://breadcrumb-mocha.vercel.app/reels (auto-deploys from `main` on GitHub `sudhamshuds-ui/Breadcrumb`, private repo, public link). Pushes update the same link; teammates never need a new one.
 
@@ -276,15 +276,15 @@ The user works on both a Windows PC (`D:\projects\Breadcrumb`) and a Mac (cloned
   - Caption sheet: the widget is hidden while the sheet is up, so a mini widget (`CrumbMini`: same circle, logo, tier rim and count badge) sits under the creator row with "Crumb found N things in this reel. See what"; tap opens the peek card. It replaced the old peach money pill.
 - **New logo** (Figma "Logo"): `CrumbGlyph` is now the bread with quote-mark eyes (`body` and `face` colours configurable); source SVGs in `public/brand/`. App icons: `app/icon.svg` (favicon) and `app/apple-icon.png` (home screen, 180 px).
 - **Phone shell**: floating see-through nav pill (no blur, it made swiping stutter), creator row and progress line spaced like Instagram, 9:41 fake status bar in the desktop frame only.
-- **Breadcrumb thread pages** (`/thread/t1`, `t2`, `t4`, `t5`; `components/thread/ThreadView.tsx`), distilled for a ~30-second visit (impeccable shape + distill):
-  - Overhauled with the widget (2026-10-09): page on the widget's light #EDEDED with white cards, new logo, emoji/line marks. First screen: compact post strip, then **the peek card at full size** ("Crumb found" / "Crumb noticed", red or amber count, the money line, every flag with its timestamp linking back to that moment, evidence as one more row, friends' faces with review counts), then the dark "Talk to a professional about {topic}" card. The card and the page share `components/crumb/Findings.tsx`, so they always match. On the thread page each flag row also shows the exact words from the reel in flowing "signal ink" (deeper `INK_LIGHT` pairs, no glow); the caption sheet uses the bright `INK_DARK` pairs. Both live in `SignalIcon.tsx`.
-  - "People you know" reviews (friends first, your own review on top marked "Waiting for moderation"), "See all N reviews" for contacts and everyone else.
-  - "What the evidence says": every source visible with type, publisher, year and a one-line takeaway; tap to open the full summary and link.
-  - "More on this thread" folds: about the creator (posts reviewed, with signals, ads disclosed) and discussion (verified professionals marked, upvotes, replies). Signal moments now live in the top card.
-  - One help CTA at a time: the bottom bar ("Talk to a professional" + review) slides in only while the care card is out of view.
-  - Mock care flow (`CareSheet.tsx`, `lib/data/care.ts`): fictional inner-west Sydney clinics, then time slots, then "You're booked in" (marked prototype only); schedule a call with a GP / pharmacist / dietitian; the real healthdirect line `tel:1800022222`.
-  - Write a review (`ReviewSheet.tsx`, `lib/my-reviews.ts`): bought it? worth it? text; saved in localStorage per thread.
-  - Every source in `lib/data/threads.ts` was verified on 2026-10-09 (links open; PubMed IDs match). Never add an unverified citation.
+- **Breadcrumb thread pages, redesigned 2026-10-29** (`/thread/t1`, `t2`, `t4`, `t5`; `components/thread/ThreadView.tsx`). User testing said the old page was too much text and the order was wrong, so it's now **a few calm cards on the page, with the detail inside a centred modal card** (Figma "Platform UI Idea", node 1417-886). Order: hero, Crumb summary, What people say, Scientific studies, Get professional help. Page on #EDEDED, white cards (28 px corners), every card's header the same: 17 px title left, grey ↗ circle right (orange only on the help card).
+  - **Hero** (`ThreadHero.tsx`): creator face + handle (taps back to the reel), large centred title (32 px, light), three separate pills: red "3 flags" (amber "N stated" on `facts` reels), white evidence pill, white "N friends reviewed". Never a trust score (the user asked about one; declined, see Decisions). A background-image hero and a 3-bar trust meter were tried and rejected as less clean.
+  - **Crumb summary** (`CrumbSummary.tsx`): one 19 px sentence from `Thread.summary` (`SummaryPart[]`: plain text, or a phrase with a `mark` = signal kind or `"evidence"`). Plain words muted, marked phrases in flowing signal ink (`INK_LIGHT`; evidence borrows the health-claim inks) with the kind's emoji in front, each phrase kept on one line. Threads without a summary get one built from their flags. Modal: one white `FoldCard` per flag (label left, emoji tile right, no chevrons), **one open at a time**; open shows the one-line detail and the exact words ("Said in the reel" / "In the caption"). Evidence is the last card. No "watch at" links and no creator stats (both removed by the user).
+  - **What people say** (`Reviews.tsx`): cards swiped sideways (78% wide, snap; a mouse can drag them on desktop). Order: verified professionals (discussion posts with a `role`) first, then your own review, friends, contacts, everyone else. Cards show face, name, time, three lines, helpful count or upvotes/replies. **No Friend/contact tags**; only "✓ Verified pharmacist" etc. Verdict ("Not sure") and bought status show only once a review is opened, as chips. Opened: a thread (faces in a column joined by a line), Reply on every post (reply to a reply prefills "@name"), a reply box; your replies are saved per thread on the device (`lib/my-replies.ts`) marked "Waiting for moderation". "View all": "4 of 9 reviews positive" with amber segment bars, friends' faces, `Thread.reviewSummary` (one line), Write a review, then every review.
+  - **Scientific studies** (`Resources.tsx`, renamed from "Resources" by the user): the top source's title leads (18 px, max 3 lines), type · publisher · year under it, then `Source.highlight`: with a `compare`, two columns (15% dark vs 2% grey, bars to scale, Treatment / Placebo); without, one big number then its meaning ("No change", "17 min", "45"); no highlight, the first sentence of the summary. "1 of N sources" under a hairline. No background image on the card (removed by the user). Modal: one FoldCard per source with its image as a thumbnail, one open at a time; open shows the comparison, summary, "Read the source".
+  - **Get professional help** (`CareCard.tsx`): just the heading, orange ↗ and "Talk to someone qualified about {topic} before you buy." Tapping opens the care flow (`CareSheet.tsx`, now a modal card, not a bottom sheet): Book a GP appointment (solid orange, stethoscope), Schedule a call (soft blue), Call healthdirect (soft green, headset, real `tel:` number). The clinic list and booking step show a photo of each fictional clinic (`Clinic.image`, `public/care/`) and a green tag for bulk billing. The sticky bottom bar still shows only while this card is off screen.
+  - **One modal** for everything (`Modal.tsx`): centred card over a dimmed page, rendered into the page's `#thread-modal-layer` so it covers the screen from inside the scroller; tap outside, × or Escape closes; focus moves in once on open. Only "Write a review" still uses the old bottom `Sheet.tsx`.
+  - **Images** were generated with the Figma MCP (`generate_image`, uses the user's Figma AI credits) into the project's Figma file, then resized with `sharp` into `public/thread/` (sources; `health-service.jpg` and `regulator.jpg` are shared) and `public/care/` (clinics). Style: calm editorial still lifes, warm cream light, no text, no pills, no people.
+  - Every source in `lib/data/threads.ts` was verified on 2026-10-09 (links open; PubMed IDs match). Never add an unverified citation, and every headline number must come straight from its source's own summary.
   - `/thread/new` (and reel r3, which has no thread) still shows the "start a thread" placeholder.
 - **Swipe-back fix**: opening a thread saves the reel and time into the reels page's own history entry and sets `breadcrumb.threadFromReels` in sessionStorage. The thread's back button uses `router.back()`, and the reels page then pushes a fresh entry to wipe the "forward" thread page, so an iPhone edge swipe (e.g. pulling the Crumb handle) can't reopen it.
 - **Pull to refresh** (`lib/use-pull-to-refresh.ts`): on the first reel, pulling down shows a turning refresh circle under the top bar; let go past 72 px and it spins and reloads the feed from the start (`/reels`, or `/reels?tutorial=1` on the tutorial link). Off while a sheet, card or tutorial stage is open. Handy in home-screen mode, which has no reload button. Touch only (phones).
@@ -302,6 +302,9 @@ The user works on both a Windows PC (`D:\projects\Breadcrumb`) and a Mac (cloned
 - **Motion**: no endless decorative loops (the caption gradient flows 3 times, then rests).
 - **Videos must be H.264 MP4 at original quality.** A VP9 export played in desktop Chrome but was blank on iPhone, and heavy compression (RF 28) looked too poor. Before pushing any new video, check for `avc1` (not `vp09`/`hev1`) and the moov box before mdat. Every reel needs a poster still.
 - **Tailwind via `@tailwindcss/postcss`**: the Turbopack loader didn't hot-reload CSS.
+- **Thread pages: cards on the page, detail in modals.** Every section is a calm card; tapping opens a centred modal card. Folding lists inside modals keep one item open at a time. Emoji marks stay (user's choice) even though Impeccable's craft floor prefers drawn icons.
+- **Three signals, never a trust score** (PRODUCT.md, binding): asked again on 2026-10-29 and kept as three pills.
+- **Branches**: substantial work happens on a branch (Vercel builds a login-protected preview per branch), then merges into `main` for the live link. The thread redesign was built on `thread-redesign` and fast-forwarded into `main` on 2026-10-29.
 - **Testing in Claude's browser pane**: ask the user to open the pane before visual checks. A hidden pane stops the dev build from loading, freezes animations and crops screenshots. Fallback: the `prod` launch config (`next start` on port 3001) loads even when hidden.
 
 ### Open issues
@@ -312,13 +315,15 @@ The user works on both a Windows PC (`D:\projects\Breadcrumb`) and a Mac (cloned
 - **Debug panel** (`components/dev/DebugHud.tsx`): `?debug=1` / `?debug=0`, or tap the top-left "Reels" corner 5 times quickly (works in the home-screen app). Shows window/viewport/scroll numbers, the widget's position, and for each touch what iOS hit vs what's drawn there. Workaround for testing: open in Safari, or pull down once per session.
 - **Wrong URLs show a 404** (`/Reels`, `/reel`). A forgiving redirect to `/reels` has been offered but not built.
 - **Home-screen icon** is generic.
-- **The user is redesigning the widget** (states, glow, peek card, interaction) and will share it next. Keep everything in `lib/` stable.
+- **Next.js security upgrade (16.4.0 to 16.4.3)** is a draft PR, `sudhamshuds-ui/Breadcrumb#1` (branch `next-security-16.4.3`, worktree `D:\projects\Breadcrumb-next-upgrade`). It was cut from `main` before the thread redesign merged: bring it up to date with `main`, check, then merge. Not live yet.
+- **Wording**: reel 1's TGA source title says "scams" (the real headline). Breaks the "never say scam" rule on screen; the user hasn't decided whether to show it as "TGA warning on semaglutide sold online".
+- **Reel 5 review count**: its pill and "View all" say 3 reviews (`trust.community.reviews`) but only 2 are listed. Pre-existing data.
+- **"Write a review"** still opens the old bottom sheet; every other detail is a modal card.
 - **Not built yet**: dev panel (chip style A/B, swipe-to-scan mode), start-a-thread.
-- **Next design pass**: `/impeccable polish` on the thread page after the user has seen it on their iPhone.
 
 ### Next step
 
-Wait for the widget redesign from the user, then rebuild the Crumb components to match it, keeping `lib/` untouched.
+Have the user check the redesigned threads on their iPhone (refresh once; home-screen app: close and reopen), then merge the Next.js security PR after bringing it up to date with `main`.
 
 ---
 
