@@ -504,6 +504,17 @@ export function ReelsApp() {
   // feed out from under the tester.
   const blockedRef = useRef(blocked);
   blockedRef.current = blocked;
+
+  // While something is open, a mouse wheel or trackpad mustn't move the feed.
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const hold = (e: WheelEvent) => {
+      if (blockedRef.current) e.preventDefault();
+    };
+    el.addEventListener("wheel", hold, { passive: false });
+    return () => el.removeEventListener("wheel", hold);
+  }, []);
   const onReelEnded = useCallback(
     (id: string) => {
       const i = reels.findIndex((r) => r.id === id);
@@ -597,7 +608,11 @@ export function ReelsApp() {
             armSettle();
           }}
           className="absolute inset-0 snap-y snap-mandatory overscroll-contain"
-          style={{ overflowY: blocked ? "hidden" : "scroll", touchAction: "pan-y" }}
+          // The feed is never switched to overflow: hidden while a sheet or
+          // card is up: on phones that repaints the video layer, which shows
+          // as a jitter behind the card. Touch scrolling is turned off with
+          // touch-action instead, and the wheel is held below.
+          style={{ overflowY: "scroll", touchAction: blocked ? "none" : "pan-y" }}
         >
           {reels.map((r, i) => {
             // Every reel stays built so a swipe never waits; only the one on

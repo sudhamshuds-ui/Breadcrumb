@@ -2,13 +2,15 @@
 
 import { useRef } from "react";
 import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform, type AnimationPlaybackControls } from "motion/react";
-import { ArrowUpRight, X } from "lucide-react";
+import { ArrowUpRight, UsersThree, X } from "@phosphor-icons/react";
 import type { CrumbStatus } from "@/lib/crumb-machine";
 import type { Reel, ReelTier, Signal, Thread } from "@/lib/types";
 import { KIND_EMOJI, type IconStyle } from "@/lib/icon-style";
 import { CrumbGlyph } from "./CrumbGlyph";
-import { SignalIcon, useIconStyle } from "./SignalIcon";
-import { CommunityRow, CountTag, FindingsList } from "./Findings";
+import { CountTag } from "./Findings";
+import { inkStyle, SignalIcon, useIconStyle } from "./SignalIcon";
+import { illustrationFor } from "./illustrations";
+import { avatarFor } from "@/lib/avatars";
 
 // One widget does everything Crumb says. It sits above the creator row:
 //   scanning  the rim glow is alive (Figma "Widget glowing - detecting")
@@ -35,7 +37,7 @@ const TONES: Record<"scan" | "flag" | "facts", Tone> = {
 };
 const BADGE = {
   flag: { bg: "#F64444", fg: "#FFFFFF" },
-  facts: { bg: "#F5A623", fg: "#26251E" },
+  facts: { bg: "#F5A623", fg: "#FFFFFF" },
 };
 
 
@@ -113,10 +115,9 @@ export function CrumbWidget(props: Props) {
             <Card
               key="card"
               layoutId={layoutId}
-              found={found}
+              found={found.length ? found.slice(0, Math.max(1, props.shown ?? found.length)) : found}
               reel={reel}
               thread={thread}
-              iconStyle={iconStyle}
               onClose={props.onClose}
               onSeeThread={props.onSeeThread}
             />
@@ -383,7 +384,6 @@ function Card({
   found,
   reel,
   thread,
-  iconStyle,
   onClose,
   onSeeThread,
 }: {
@@ -391,20 +391,20 @@ function Card({
   found: Signal[];
   reel: Reel;
   thread: Thread | undefined;
-  iconStyle: IconStyle;
   onClose: () => void;
   onSeeThread: () => void;
 }) {
   const empty = found.length === 0;
   const facts = reel.tier !== "flag";
+  const lead = found[0];
 
   return (
     <motion.div
       layoutId={layoutId}
       role="dialog"
       aria-label={empty ? "Nothing flagged yet" : "What Crumb found"}
-      className="crumb-type absolute bottom-0 left-0 overflow-hidden bg-white text-crumb-ink"
-      style={{ width: empty ? 300 : "min(366px, calc(100vw - 24px))", borderRadius: 28 }}
+      className="crumb-type absolute bottom-0 left-0 overflow-hidden text-crumb-ink"
+      style={{ width: empty ? 300 : "min(366px, calc(100vw - 24px))", borderRadius: 28, background: "#FFFFFF" }}
       transition={SPRING}
       drag="y"
       dragConstraints={{ top: 0, bottom: 0 }}
@@ -432,10 +432,12 @@ function Card({
             <CloseButton onClose={onClose} />
           </div>
         ) : (
-          <div className="max-h-[min(520px,66vh)] overflow-y-auto overscroll-contain p-3" onPointerDown={(e) => e.stopPropagation()}>
-            {/* What Crumb found (who posted it is already on the reel) */}
-            <div className="flex items-center justify-between gap-2 px-1">
-              <p className="flex items-center gap-2 text-[16px] font-medium tracking-[-0.01em]">
+          // Figma "peek card new" (1482-826): what Crumb found as one picture
+          // and one line, who you know, and the way to the thread. The full
+          // list of flags lives on the thread.
+          <div className="p-3" onPointerDown={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between gap-2 pl-1.5">
+              <p className="flex items-center gap-2 text-[15.5px] font-medium tracking-[-0.01em]">
                 <CrumbGlyph size={20} />
                 {facts ? "Crumb noticed" : "Crumb found"}
               </p>
@@ -445,14 +447,29 @@ function Card({
               </span>
             </div>
 
-            {/* Everything flagged, evidence as one more signal, then people */}
-            <FindingsList found={found} thread={thread} iconStyle={iconStyle} className="mt-2.5" />
-            {thread && <CommunityRow thread={thread} iconStyle={iconStyle} className="mt-2" />}
+            {lead && illustrationFor(lead) && (
+              <span className="relative mt-2.5 block aspect-[15/8] overflow-hidden rounded-[18px]">
+                {/* The first flag's picture */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={illustrationFor(lead)} alt="" className="absolute top-1/2 left-0 w-full -translate-y-1/2" />
+              </span>
+            )}
+
+            {lead && (
+              <p className="mt-3 px-1.5 text-[16.5px] leading-snug tracking-[-0.01em] text-crumb-body">
+                <span className="signal-ink on-light font-medium" style={inkStyle(lead.kind, "light")}>
+                  {lead.label}
+                </span>
+                {moreText(found, facts)}
+              </p>
+            )}
+
+            {thread && <PeopleRow thread={thread} />}
 
             <button
               type="button"
               onClick={onSeeThread}
-              className="mt-2.5 flex h-11 w-full items-center justify-center gap-1.5 rounded-full bg-crumb-ink text-[15px] font-medium text-white active:opacity-85"
+              className="mt-3 flex h-12 w-full items-center justify-center gap-1.5 rounded-full bg-crumb-ink text-[15px] font-medium text-white active:opacity-85"
             >
               {thread ? "See the thread" : "Start a thread"} <ArrowUpRight size={17} />
             </button>
@@ -461,6 +478,45 @@ function Card({
       </motion.div>
     </motion.div>
   );
+}
+
+// After the first flag's name: " and 2 more flags" (amber reels: " and 2 more").
+function moreText(found: Signal[], facts: boolean): string {
+  const more = found.length - 1;
+  if (more <= 0) return "";
+  return ` and ${more} more${facts ? "" : more === 1 ? " flag" : " flags"}`;
+}
+
+// Who you know reviewed it.
+function PeopleRow({ thread }: { thread: Thread }) {
+  const names = thread.friendNames;
+  return (
+    <div className="mt-2.5 flex items-center gap-3 px-1.5">
+      {names.length > 0 ? (
+        <span className="flex shrink-0 -space-x-2.5">
+          {names.slice(0, 3).map((n) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={n} src={avatarFor(n)} alt="" className="size-8 rounded-full object-cover ring-2 ring-white" />
+          ))}
+        </span>
+      ) : (
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-crumb-surface text-crumb-body">
+          <UsersThree size={18} weight="duotone" />
+        </span>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[14.5px] leading-snug text-crumb-body">
+          {names.length > 0 ? `${joinNames(names)} reviewed this` : "No one you know has reviewed this"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function joinNames(names: string[]): string {
+  if (names.length <= 1) return names.join("");
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  return `${names[0]}, ${names[1]} and ${names.length - 2} more`;
 }
 
 function CloseButton({ onClose }: { onClose: () => void }) {
