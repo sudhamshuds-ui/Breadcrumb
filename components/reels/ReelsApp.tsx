@@ -58,6 +58,17 @@ export function ReelsApp() {
   const startIndex = Math.max(0, reels.findIndex((r) => r.id === params.get("reel")));
   const startTime = Number(params.get("t")) || 0;
 
+  // Load every thread page in the background soon after the feed opens, so
+  // "See the thread" opens instantly instead of waiting behind the reel
+  // videos still downloading. Four small pages; the delay lets the first
+  // video start first.
+  useEffect(() => {
+    const id = window.setTimeout(() => {
+      for (const r of reels) if (r.threadId) router.prefetch(`/thread/${r.threadId}`);
+    }, 1500);
+    return () => window.clearTimeout(id);
+  }, [router]);
+
   const [index, setIndex] = useState(startIndex);
   // Opened mid-reel (back from a thread): start already caught up, so what was
   // said before this moment is never re-announced, not even for a frame.
