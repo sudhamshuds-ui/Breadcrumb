@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight } from "lucide-react";
+import { CardBanner } from "./CardBanner";
 import type { Thread } from "@/lib/types";
 import type { CareStart } from "./CareSheet";
 
@@ -23,15 +23,11 @@ export function CareCard({
       <button
         type="button"
         onClick={() => onStart("choose")}
-        className="block w-full rounded-[28px] bg-white px-3.5 pt-3.5 pb-6 text-left transition-transform duration-150 active:scale-[0.99]"
+        className="block w-full rounded-[28px] bg-white p-3.5 pb-6 text-left transition-transform duration-150 active:scale-[0.99]"
       >
-        <span className="flex items-center justify-between gap-2 py-0.5 pr-0.5 pl-1.5">
-          <span className="text-[17px] font-medium tracking-[-0.01em]">Get professional help</span>
-          <span className="flex size-9 items-center justify-center rounded-full bg-crumb-accent text-white" aria-hidden>
-            <ArrowUpRight size={18} />
-          </span>
-        </span>
-        <span className="mt-5 block px-1.5 text-[19px] leading-[1.4] tracking-[-0.015em] text-crumb-muted [text-wrap:pretty]">
+        <CardBanner src="/illustrations/doctor.webp" />
+        <span className="mt-4 block px-1.5 text-[24px] leading-tight tracking-[-0.02em]">Get professional help</span>
+        <span className="mt-2 block px-1.5 text-[16.5px] leading-[1.4] tracking-[-0.01em] text-crumb-muted [text-wrap:pretty]">
           Talk to someone qualified about <span className="text-crumb-ink">{thread.care.topic}</span> before you buy.
         </span>
       </button>

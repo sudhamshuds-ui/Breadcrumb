@@ -100,7 +100,7 @@ export const threads: Thread[] = [
           label: "average body weight lost over 68 weeks",
           compare: { value: "2%", label: "on placebo" },
         },
-        image: "/thread/t1-trial.jpg",
+        image: "/illustrations/results.webp",
       },
       {
         title: "Weight loss medicine",
@@ -109,7 +109,7 @@ export const threads: Thread[] = [
         summary:
           "Explains the prescription weight-loss medicines used in Australia and their common digestive side effects. It also notes they aren't currently covered by Medicare.",
         url: "https://www.healthdirect.gov.au/weight-loss-medicine",
-        image: "/thread/health-service.jpg",
+        image: "/illustrations/nurse.webp",
       },
       {
         title: "TGA warns of online semaglutide scams",
@@ -118,7 +118,7 @@ export const threads: Thread[] = [
         summary:
           "Australia's medicines regulator found some weight-loss injections sold online didn't contain what the label said. It advises getting them only through a pharmacy with a valid prescription.",
         url: "https://www1.racgp.org.au/newsgp/clinical/tga-warns-of-online-semaglutide-scams",
-        image: "/thread/regulator.jpg",
+        image: "/illustrations/warning.webp",
       },
     ],
     discussion: [

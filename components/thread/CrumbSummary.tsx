@@ -149,7 +149,7 @@ export function CrumbSummaryModal({
 // Closed: title, where it was found, and the picture cropped in a small tile.
 // Open: the picture unfolds as a banner above the title, and the detail and
 // exact words follow underneath.
-function IllustratedCard({
+export function IllustratedCard({
   title,
   sub,
   image,
@@ -208,16 +208,16 @@ function IllustratedCard({
               <span className="block truncate pt-0.5 text-[12.5px] text-crumb-muted">{sub}</span>
             </motion.span>
           </span>
-          <AnimatePresence initial={false}>
-            {!open && image && (
+          {image && (
+            // The column keeps its width open or closed, so a long title never
+            // re-wraps mid-transition; only the tile inside fades and folds.
+            <span className="flex w-16 shrink-0 justify-end self-start">
               <motion.span
-                key="thumb"
-                initial={reduce ? { opacity: 0 } : { opacity: 0, width: 0, height: 0 }}
-                animate={reduce ? { opacity: 1 } : { opacity: 1, width: 64, height: 46 }}
-                exit={reduce ? { opacity: 0 } : { opacity: 0, width: 0, height: 0 }}
-                transition={{ duration: 0.28, ease }}
-                className="relative block shrink-0 overflow-hidden rounded-[13px]"
-                style={{ width: 64, height: 46 }}
+                initial={false}
+                animate={{ opacity: open ? 0 : 1, height: open ? 0 : 46 }}
+                transition={reduce ? { duration: 0 } : { duration: 0.32, ease }}
+                className="relative block w-16 overflow-hidden rounded-[13px]"
+                aria-hidden={open}
               >
                 {/* The picture stays big and is cropped by the small tile */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -227,8 +227,8 @@ function IllustratedCard({
                   className="absolute top-1/2 left-1/2 w-[105px] max-w-none -translate-x-1/2 -translate-y-1/2"
                 />
               </motion.span>
-            )}
-          </AnimatePresence>
+            </span>
+          )}
         </span>
         {/* Bottom padding of the closed row; it folds away when open so the
             detail sits right under the title */}
