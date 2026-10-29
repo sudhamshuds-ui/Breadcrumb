@@ -9,6 +9,7 @@ const BY_KIND: Partial<Record<SignalKind, string>> = {
   paid_partnership: "/illustrations/money.webp",
   product_mention: "/illustrations/pills.webp",
   discount_code: "/illustrations/discount.webp",
+  health_claim: "/illustrations/claims.webp",
 };
 
 export const EVIDENCE_ILLUSTRATION = "/illustrations/microscope.webp";

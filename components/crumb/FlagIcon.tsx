@@ -1,8 +1,10 @@
 import {
   ChatCircleText,
   Flask,
+  Barbell,
   Handshake,
   LinkSimple,
+  Megaphone,
   Package,
   Pill,
   Tag,
@@ -26,6 +28,8 @@ const BY_KIND: Record<SignalKind, Icon> = {
 
 const BY_NAME: Record<FlagIconName, Icon> = {
   pill: Pill,
+  barbell: Barbell,
+  megaphone: Megaphone,
 };
 
 type Mark = SignalKind | "evidence";

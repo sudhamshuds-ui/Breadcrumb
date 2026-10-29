@@ -116,7 +116,7 @@ export interface Source {
 export type SummaryPart = string | { text: string; mark: SignalKind | "evidence"; icon?: FlagIconName };
 
 // A more specific icon than the kind's default, for a summary phrase.
-export type FlagIconName = "pill";
+export type FlagIconName = "pill" | "barbell" | "megaphone";
 
 // A creator's history across Breadcrumb. Scored per post, never as one number.
 export interface CreatorRecord {

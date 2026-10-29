@@ -136,6 +136,7 @@ export const reels: Reel[] = [
       },
       {
         id: "r2-s2",
+        illustration: "/illustrations/seal.webp",
         kind: "health_claim",
         label: "Endorsement claim",
         detail: "Says it's the first supplement recognised by the National Psoriasis Foundation.",
@@ -144,6 +145,7 @@ export const reels: Reel[] = [
       },
       {
         id: "r2-s3",
+        illustration: "/illustrations/skin.webp",
         kind: "health_claim",
         label: "Skin results",
         detail: "Says her skin looked clearer and calmer within a few weeks.",
@@ -193,6 +195,7 @@ export const reels: Reel[] = [
     signals: [
       {
         id: "r4-s1",
+        illustration: "/illustrations/fitness.webp",
         kind: "product_mention",
         label: "Coaching offer",
         detail: "The caption invites DMs about 1-on-1 coaching.",
@@ -209,6 +212,7 @@ export const reels: Reel[] = [
       },
       {
         id: "r4-s3",
+        illustration: "/illustrations/heart-check.webp",
         kind: "health_claim",
         label: "Testosterone claim",
         detail: "Says vitamin D with K2 will boost testosterone.",
@@ -247,6 +251,7 @@ export const reels: Reel[] = [
     signals: [
       {
         id: "r5-s1",
+        illustration: "/illustrations/brand-ad.webp",
         kind: "product_mention",
         label: "Brand's own ad",
         detail: "Posted by the brand that sells these supplements.",
@@ -254,6 +259,7 @@ export const reels: Reel[] = [
       },
       {
         id: "r5-s2",
+        illustration: "/illustrations/sleep.webp",
         kind: "health_claim",
         label: "Energy and sleep claim",
         detail: "Claims lasting energy and better sleep. The caption says the FDA hasn't evaluated this.",
