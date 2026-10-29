@@ -6,7 +6,8 @@ import { Heart, ImageIcon, Smile, X } from "lucide-react";
 import type { Reel, Signal } from "@/lib/types";
 import { captionParts } from "@/lib/playback";
 import { CrumbMini } from "@/components/crumb/CrumbWidget";
-import { inkStyle, KindMark, useIconStyle } from "@/components/crumb/SignalIcon";
+import { inkStyle } from "@/components/crumb/SignalIcon";
+import { FlagIcon } from "@/components/crumb/FlagIcon";
 import { Avatar } from "./ReelChrome";
 import { MY_AVATAR, avatarFor } from "@/lib/avatars";
 
@@ -23,7 +24,6 @@ interface Props {
 export function CaptionSheet({ open, reel, top, signals, onClose, onOpenPeek }: Props) {
   const reduce = useReducedMotion();
   const [selected, setSelected] = useState<Signal | null>(null);
-  const iconStyle = useIconStyle();
   const parts = captionParts(reel.caption, signals);
 
   return (
@@ -148,7 +148,9 @@ export function CaptionSheet({ open, reel, top, signals, onClose, onOpenPeek }: 
                 className="px-4 pb-2"
               >
                 <div className="crumb-type flex items-start gap-2.5 rounded-[20px] bg-white p-3 text-crumb-ink" role="status">
-                  <KindMark kind={selected.kind} style={iconStyle} size={30} />
+                  <span className="flex size-[30px] shrink-0 items-center justify-center rounded-full bg-crumb-surface" aria-hidden>
+                    <FlagIcon mark={selected.kind} size={18} />
+                  </span>
                   <span className="min-w-0 flex-1 leading-tight">
                     <span className="block text-[14px] font-medium">{selected.label}</span>
                     <span className="mt-0.5 block text-[13px] leading-snug text-crumb-body">{selected.detail}</span>

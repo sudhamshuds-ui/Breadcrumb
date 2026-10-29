@@ -5,10 +5,10 @@ import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion, use
 import { ArrowUpRight, UsersThree, X } from "@phosphor-icons/react";
 import type { CrumbStatus } from "@/lib/crumb-machine";
 import type { Reel, ReelTier, Signal, Thread } from "@/lib/types";
-import { KIND_EMOJI, type IconStyle } from "@/lib/icon-style";
 import { CrumbGlyph } from "./CrumbGlyph";
 import { CountTag } from "./Findings";
-import { inkStyle, SignalIcon, useIconStyle } from "./SignalIcon";
+import { inkStyle } from "./SignalIcon";
+import { FlagIcon } from "./FlagIcon";
 import { illustrationFor } from "./illustrations";
 import { avatarFor } from "@/lib/avatars";
 
@@ -70,7 +70,6 @@ export function CrumbWidget(props: Props) {
       ? { key: "aside", kind: undefined, emoji: props.aside.emoji, label: props.aside.label ?? "" }
       : null;
   const reduce = useReducedMotion();
-  const iconStyle = useIconStyle();
   const off = status === "off";
   const flagTone = reel.tier === "flag" ? "flag" : "facts";
   // No glow while a flag is shown as a chip: one thing moves at a time. The
@@ -130,7 +129,6 @@ export function CrumbWidget(props: Props) {
               tone={tone}
               badge={status === "signals" && !chip && (props.shown ?? found.length) > 0 ? { count: props.shown ?? found.length, ...BADGE[flagTone] } : null}
               chip={chip}
-              iconStyle={iconStyle}
               disabled={off || hidden}
               onTap={glowMode === "scanning" ? () => {} : props.onOpen}
               onHold={props.onTurnOff}
@@ -187,7 +185,6 @@ function Widget({
   tone,
   badge,
   chip,
-  iconStyle,
   disabled,
   onTap,
   onHold,
@@ -198,7 +195,6 @@ function Widget({
   tone: Tone;
   badge: { count: number; bg: string; fg: string } | null;
   chip: { key: string; kind?: Signal["kind"]; emoji?: string; label: string } | null;
-  iconStyle: IconStyle;
   disabled: boolean;
   onTap: () => void;
   onHold: () => void;
@@ -344,10 +340,8 @@ function Widget({
                 <span className={chip.label ? "text-[16px] leading-none" : "text-[20px] leading-none tracking-[0.04em]"} aria-hidden>
                   {chip.emoji}
                 </span>
-              ) : chip.kind && iconStyle === "emoji" ? (
-                <span className="text-[16px] leading-none" aria-hidden>{KIND_EMOJI[chip.kind]}</span>
               ) : chip.kind ? (
-                <SignalIcon kind={chip.kind} size={15} />
+                <FlagIcon mark={chip.kind} size={19} />
               ) : null}
               {chip.label}
             </motion.span>
