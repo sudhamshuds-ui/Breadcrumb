@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion, useTransform, type AnimationPlaybackControls } from "motion/react";
+import { animate, AnimatePresence, motion, useMotionValue, useReducedMotion } from "motion/react";
 import { ArrowUpRight, UsersThree, X } from "@phosphor-icons/react";
 import type { CrumbStatus } from "@/lib/crumb-machine";
 import type { Reel, ReelTier, Signal, Thread } from "@/lib/types";
@@ -16,14 +16,13 @@ import { avatarFor } from "@/lib/avatars";
 //   scanning  the rim glow is alive (Figma "Widget glowing - detecting")
 //   a flag    the circle stretches into a chip, holds, folds back with a badge
 //   tap       morphs into the peek card (or "Nothing flagged yet")
-//   hold      turns Crumb off; it slides out left, leaving a slim tab
+//   swipe     left turns Crumb off; it slides out, leaving a slim tab
 //   tab       swipe it right (or tap) to bring Crumb back
 
 const SIZE = 46;
-// Hold to turn off: nothing shows for a normal tap; the ring only appears
-// once the finger has stayed down a moment, then fills.
-export const HOLD_DELAY_MS = 300;
-export const HOLD_MS = 800;
+// Swipe left to turn off: past this distance (or a quick flick) Crumb goes;
+// let go before it and the widget springs back.
+const SWIPE_OFF_PX = 48;
 const SURFACE = "#EDEDED";
 const SPRING = { type: "spring", stiffness: 420, damping: 36 } as const;
 
@@ -131,7 +130,7 @@ export function CrumbWidget(props: Props) {
               chip={chip}
               disabled={off || hidden}
               onTap={glowMode === "scanning" ? () => {} : props.onOpen}
-              onHold={props.onTurnOff}
+              onSwipeOff={props.onTurnOff}
             />
           )}
         </AnimatePresence>
@@ -187,7 +186,7 @@ function Widget({
   chip,
   disabled,
   onTap,
-  onHold,
+  onSwipeOff,
 }: {
   layoutId?: string;
   glowMode: "scanning" | "flagged" | "none";
@@ -197,73 +196,71 @@ function Widget({
   chip: { key: string; kind?: Signal["kind"]; emoji?: string; label: string } | null;
   disabled: boolean;
   onTap: () => void;
-  onHold: () => void;
+  onSwipeOff: () => void;
 }) {
   // The last visible glow mode, so a fading glow keeps moving while it fades.
   const lastMode = useRef<"scanning" | "flagged">("scanning");
   if (glowMode !== "none") lastMode.current = glowMode;
   const fadeQuick = Boolean(chip);
 
-  const progress = useMotionValue(0);
-  const ringOpacity = useTransform(progress, [0, 0.05], [0, 1]);
-  const press = useRef<{ x: number; y: number; timers: ReturnType<typeof setTimeout>[]; anim?: AnimationPlaybackControls } | null>(null);
-  const held = useRef(false);
+  // Swipe left to turn Crumb off. The widget follows the finger (left only);
+  // past the threshold or on a flick it goes, otherwise it springs back. A
+  // plain element listens, because motion consumes raw pointer events on its
+  // own animated elements. A swipe never counts as a tap.
+  const x = useMotionValue(0);
+  const press = useRef<{ x: number; y: number; t: number; dragging: boolean } | null>(null);
+  const swiped = useRef(false);
 
-  const cancelHold = () => {
-    if (!press.current) return;
-    press.current.timers.forEach(clearTimeout);
-    press.current.anim?.stop();
+  const endSwipe = (clientX: number) => {
+    const p = press.current;
     press.current = null;
-    animate(progress, 0, { duration: 0.18 });
+    if (!p?.dragging) return;
+    swiped.current = true;
+    setTimeout(() => (swiped.current = false), 400);
+    const dx = clientX - p.x;
+    const speed = dx / Math.max(1, performance.now() - p.t); // px per ms
+    if (dx < -SWIPE_OFF_PX || (dx < -16 && speed < -0.5)) {
+      // The whole widget slides out with the same spring, so this offset
+      // eases back to 0 as it goes and the two add up to one smooth exit.
+      onSwipeOff();
+      animate(x, 0, { type: "spring", stiffness: 260, damping: 30 });
+    } else {
+      animate(x, 0, SPRING);
+    }
   };
 
   return (
     <motion.div
       className="relative"
+      style={{ x }}
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.18 }}
     >
-      {/* Press and hold anywhere on the widget to turn Crumb off. A plain
-          element listens, because motion consumes raw pointer events on its
-          own animated elements. Moving the finger cancels the hold. */}
       <div
+        style={{ touchAction: "pan-y" }}
         onPointerDown={(e) => {
           if (disabled) return;
-          held.current = false;
-          const p: NonNullable<typeof press.current> = { x: e.clientX, y: e.clientY, timers: [] };
-          press.current = p;
-          // A normal tap lifts before this fires, so it never shows the ring.
-          p.timers.push(
-            setTimeout(() => {
-              p.anim = animate(progress, 1, { duration: HOLD_MS / 1000, ease: "linear" });
-              p.timers.push(
-                setTimeout(() => {
-                  held.current = true;
-                  press.current = null;
-                  // Stop the fill first: if its last frame lands after the reset,
-                  // the ring stays drawn around the widget when Crumb comes back.
-                  p.anim?.stop();
-                  progress.jump(0);
-                  onHold();
-                  // Phones don't always send a click after a long press; never let a
-                  // stale flag swallow the next real tap.
-                  setTimeout(() => (held.current = false), 600);
-                }, HOLD_MS),
-              );
-            }, HOLD_DELAY_MS),
-          );
+          press.current = { x: e.clientX, y: e.clientY, t: performance.now(), dragging: false };
         }}
         onPointerMove={(e) => {
           const p = press.current;
-          if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) > 10) cancelHold();
+          if (!p) return;
+          const dx = e.clientX - p.x;
+          const dy = e.clientY - p.y;
+          if (!p.dragging) {
+            if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy)) return;
+            p.dragging = true;
+            e.currentTarget.setPointerCapture(e.pointerId);
+          }
+          // Follows the finger to the left; a little resistance to the right.
+          x.set(dx < 0 ? dx : dx * 0.15);
         }}
-        onPointerUp={cancelHold}
-        onPointerCancel={cancelHold}
-        onPointerLeave={cancelHold}
+        onPointerUp={(e) => endSwipe(e.clientX)}
+        onPointerCancel={(e) => endSwipe(e.clientX)}
       >
-      {/* Glow and hold ring sit behind/around the circle end of the widget */}
+      {/* The glow sits behind/around the circle end of the widget */}
       <div className="pointer-events-none absolute top-0 left-0" style={{ width: SIZE, height: SIZE }}>
         <div
           key={glowMode === "flagged" ? `f${glowKey}` : "glow"}
@@ -287,10 +284,6 @@ function Widget({
           </div>
           <span className="ring" />
         </div>
-        <motion.svg className="crumb-hold-ring" viewBox="0 0 64 64" style={{ opacity: ringOpacity }} aria-hidden>
-          <circle cx="32" cy="32" r="30" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="3" />
-          <motion.circle cx="32" cy="32" r="30" fill="none" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" style={{ pathLength: progress }} />
-        </motion.svg>
       </div>
 
       <motion.button
@@ -299,17 +292,14 @@ function Widget({
         layout
         layoutId={layoutId}
         disabled={disabled}
-        aria-label={chip ? `Crumb: ${chip.label || "just for fun"}. Tap for details.` : "Crumb. Tap to see what it found, hold to turn off."}
+        aria-label={chip ? `Crumb: ${chip.label || "just for fun"}. Tap for details.` : "Crumb. Tap to see what it found, swipe left to turn off."}
         className="relative flex items-center overflow-hidden text-crumb-ink outline-offset-4 select-none"
         style={{ height: SIZE, minWidth: SIZE, borderRadius: SIZE / 2, background: SURFACE }}
         transition={SPRING}
         onContextMenu={(e) => e.preventDefault()}
         onClick={() => {
-          // A hold already turned Crumb off: swallow the click that follows.
-          if (held.current) {
-            held.current = false;
-            return;
-          }
+          // The end of a swipe isn't a tap.
+          if (swiped.current) return;
           onTap();
         }}
       >

@@ -344,14 +344,6 @@ body {
   50% { transform: scale(1.06); }
 }
 
-/* Long-press feedback ring around the widget */
-.crumb-hold-ring {
-  position: absolute;
-  inset: -5px;
-  pointer-events: none;
-  transform: rotate(-90deg);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .crumb-glow .orbit,
   .crumb-glow .ring,

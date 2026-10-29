@@ -577,10 +577,13 @@ export function ReelsApp() {
       className="absolute inset-0 overflow-clip bg-black"
       onPointerDown={onPointerDown}
     >
-      {/* Video area: shrinks to the top when the caption sheet opens */}
+      {/* Video area: shrinks to the top when the caption sheet opens. It keeps
+          its own compositing layer at all times: otherwise, when it grows back
+          to full size, the browser drops the layer and repaints every video
+          inside, which shows as a jitter after the captions close. */}
       <motion.div
         className="absolute inset-x-0 top-0 overflow-clip"
-        style={{ bottom: 0, transformOrigin: "50% 0%" }}
+        style={{ bottom: 0, transformOrigin: "50% 0%", willChange: "transform", backfaceVisibility: "hidden" }}
         animate={
           captionOpen
             ? { scale: shrinkScale, y: 58, borderRadius: 18 / shrinkScale }
