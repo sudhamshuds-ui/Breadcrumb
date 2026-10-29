@@ -6,8 +6,9 @@ import { ArrowUpRight } from "lucide-react";
 import type { Reel, SignalKind, SummaryPart, Thread } from "@/lib/types";
 import { EVIDENCE_EMOJI, KIND_EMOJI, type IconStyle } from "@/lib/icon-style";
 import { CrumbGlyph } from "@/components/crumb/CrumbGlyph";
+import { EVIDENCE_ILLUSTRATION, illustrationFor } from "@/components/crumb/illustrations";
 import { EVIDENCE_LINE } from "@/components/crumb/Findings";
-import { inkStyle, KindMark, SignalIcon, TrustIcon, TrustMark } from "@/components/crumb/SignalIcon";
+import { inkStyle, SignalIcon, TrustIcon } from "@/components/crumb/SignalIcon";
 import { Modal } from "./Modal";
 
 // What Crumb found, as one big sentence with icons in it and the findings in
@@ -100,13 +101,11 @@ export function CrumbSummaryModal({
   onClose,
   reel,
   thread,
-  iconStyle,
 }: {
   open: boolean;
   onClose: () => void;
   reel: Reel;
   thread: Thread;
-  iconStyle: IconStyle;
 }) {
   // One card open at a time: opening another folds the last one away.
   const [openId, setOpenId] = useState<string | null>(reel.signals[0]?.id ?? null);
@@ -116,37 +115,145 @@ export function CrumbSummaryModal({
     <Modal open={open} title="Crumb summary" onClose={onClose}>
       <div className="flex flex-col gap-2">
         {reel.signals.map((s) => (
-          <FoldCard
+          <IllustratedCard
             key={s.id}
+            id={s.id}
             title={s.label}
-            mark={<KindMark kind={s.kind} style={iconStyle} size={36} />}
+            sub={s.quote ? "Mentioned in the reel" : "Flagged in the caption"}
+            image={illustrationFor(s)}
             open={openId === s.id}
             onToggle={() => toggle(s.id)}
           >
             <p className="text-[14px] leading-snug text-crumb-body">{s.detail}</p>
             {(s.quote ?? s.captionQuote) && (
-              <p className="mt-2.5 rounded-[14px] bg-crumb-surface px-3 py-2.5 text-[14px] leading-snug text-crumb-muted">
-                {s.quote ? "Said in the reel: " : "In the caption: "}
-                &ldquo;
+              <p className="mt-2.5 text-[14px] leading-snug text-crumb-muted">
                 <span className="signal-ink on-light font-semibold" style={inkStyle(s.kind, "light")}>
                   {s.quote ?? s.captionQuote}
                 </span>
-                &rdquo;
               </p>
             )}
-          </FoldCard>
+          </IllustratedCard>
         ))}
 
-        <FoldCard
+        <IllustratedCard
+          id="evidence"
           title={EVIDENCE_LINE[thread.trust.evidence]}
-          mark={<TrustMark name="evidence" emoji={EVIDENCE_EMOJI} style={iconStyle} size={36} />}
+          sub={`From ${thread.sources.length} linked ${thread.sources.length === 1 ? "source" : "sources"}`}
+          image={EVIDENCE_ILLUSTRATION}
           open={openId === "evidence"}
           onToggle={() => toggle("evidence")}
         >
           <p className="text-[14px] leading-snug text-crumb-body">{thread.evidenceNote}</p>
-        </FoldCard>
+        </IllustratedCard>
       </div>
     </Modal>
+  );
+}
+
+// A flag as a card with its illustration (Figma "summary card", 1470-487).
+// Closed: title, where it was found, and the picture cropped in a small tile.
+// Open: the picture unfolds as a banner above the title, and the detail and
+// exact words follow underneath.
+function IllustratedCard({
+  title,
+  sub,
+  image,
+  open,
+  onToggle,
+  children,
+}: {
+  id: string;
+  title: string;
+  sub: string;
+  image?: string;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+}) {
+  const reduce = useReducedMotion();
+  // Only height and opacity move, so nothing stretches: the banner unfolds
+  // above the title while the thumbnail fades out of the row.
+  const ease = [0.22, 1, 0.36, 1] as const;
+  const fold = reduce
+    ? { initial: { opacity: 0 }, animate: { opacity: 1 }, exit: { opacity: 0 } }
+    : {
+        initial: { height: 0, opacity: 0 },
+        animate: { height: "auto", opacity: 1 },
+        exit: { height: 0, opacity: 0 },
+      };
+
+  return (
+    <div className="overflow-hidden rounded-[22px] bg-white">
+      <button type="button" onClick={onToggle} aria-expanded={open} className="block w-full text-left">
+        <AnimatePresence initial={false}>
+          {open && image && (
+            <motion.span key="banner" {...fold} transition={{ duration: 0.32, ease }} className="block overflow-hidden">
+              <span className="block px-2.5 pt-2.5 pb-1.5">
+                <span className="relative block aspect-[2/1] overflow-hidden rounded-[16px]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={image} alt="" className="absolute top-1/2 left-0 w-full -translate-y-1/2" />
+                </span>
+              </span>
+            </motion.span>
+          )}
+        </AnimatePresence>
+
+        <span className="flex items-center gap-3 pt-2 pr-2 pl-3.5">
+          <span className="min-w-0 flex-1 pt-1">
+            <span className="block text-[15.5px] leading-tight font-medium">{title}</span>
+            {/* Always mounted and sized by animation, so it shrinks in step
+                with the banner instead of vanishing at the end */}
+            <motion.span
+              initial={false}
+              animate={{ opacity: open ? 0 : 1, height: open ? 0 : "auto" }}
+              transition={reduce ? { duration: 0 } : { duration: 0.32, ease }}
+              className="block overflow-hidden"
+              aria-hidden={open}
+            >
+              <span className="block truncate pt-0.5 text-[12.5px] text-crumb-muted">{sub}</span>
+            </motion.span>
+          </span>
+          <AnimatePresence initial={false}>
+            {!open && image && (
+              <motion.span
+                key="thumb"
+                initial={reduce ? { opacity: 0 } : { opacity: 0, width: 0, height: 0 }}
+                animate={reduce ? { opacity: 1 } : { opacity: 1, width: 64, height: 46 }}
+                exit={reduce ? { opacity: 0 } : { opacity: 0, width: 0, height: 0 }}
+                transition={{ duration: 0.28, ease }}
+                className="relative block shrink-0 overflow-hidden rounded-[13px]"
+                style={{ width: 64, height: 46 }}
+              >
+                {/* The picture stays big and is cropped by the small tile */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={image}
+                  alt=""
+                  className="absolute top-1/2 left-1/2 w-[105px] max-w-none -translate-x-1/2 -translate-y-1/2"
+                />
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </span>
+        {/* Bottom padding of the closed row; it folds away when open so the
+            detail sits right under the title */}
+        <motion.span
+          initial={false}
+          animate={{ height: open ? 0 : 8 }}
+          transition={reduce ? { duration: 0 } : { duration: 0.32, ease }}
+          className="block"
+          aria-hidden
+        />
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div key="detail" {...fold} transition={{ duration: 0.32, ease }} className="overflow-hidden">
+            <div className="px-3.5 pb-3.5">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 

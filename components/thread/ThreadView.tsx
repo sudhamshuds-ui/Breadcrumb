@@ -167,7 +167,7 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
       </AnimatePresence>
 
       <div id={MODAL_LAYER_ID} />
-      <CrumbSummaryModal open={summaryOpen} onClose={() => setSummaryOpen(false)} reel={reel} thread={thread} iconStyle={iconStyle} />
+      <CrumbSummaryModal open={summaryOpen} onClose={() => setSummaryOpen(false)} reel={reel} thread={thread} />
       <CareSheet open={care !== null} start={care ?? "choose"} care={thread.care} onClose={() => setCare(null)} />
       <ReviewSheet
         open={writing}

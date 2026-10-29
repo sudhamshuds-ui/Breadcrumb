@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { X } from "lucide-react";
@@ -12,11 +12,27 @@ interface Props {
   children: React.ReactNode;
 }
 
-// A card that opens in the middle of the page, over a dimmed thread. Tap
-// outside, tap × or press Escape to close. Long content scrolls inside it.
+// A card that opens in the middle of the page, over a dimmed thread, and
+// keeps its top edge where it opened. Tap outside, tap × or press Escape to
+// close. Long content scrolls inside it.
 export function Modal({ open, title, onClose, children }: Props) {
   const reduce = useReducedMotion();
   const panel = useRef<HTMLDivElement>(null);
+  const backdrop = useRef<HTMLDivElement>(null);
+
+  // Opens centred, then stays put: the top edge is pinned where it first
+  // landed, so when the content grows or shrinks (a card opening) the modal
+  // only changes at the bottom instead of re-centring and bouncing.
+  useLayoutEffect(() => {
+    const box = backdrop.current;
+    const card = panel.current;
+    if (!open || !box || !card) return;
+    const padTop = parseFloat(getComputedStyle(box).paddingTop) || 0;
+    const offset = Math.max(0, card.offsetTop - padTop);
+    box.style.alignItems = "flex-start";
+    card.style.marginTop = `${offset}px`;
+    card.style.maxHeight = `calc(100% - ${offset}px)`;
+  }, [open]);
 
   // Keyboard focus moves into the card once, when it opens
   useEffect(() => {
@@ -39,6 +55,7 @@ export function Modal({ open, title, onClose, children }: Props) {
       {open && (
         <motion.div
           key="modal"
+          ref={backdrop}
           className="absolute inset-0 z-50 flex items-center justify-center px-3 pt-[calc(var(--top-inset)+12px)] pb-[max(16px,env(safe-area-inset-bottom))]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -52,7 +69,7 @@ export function Modal({ open, title, onClose, children }: Props) {
             role="dialog"
             aria-modal="true"
             aria-label={title}
-            className="relative flex max-h-full w-full flex-col overflow-hidden rounded-[28px] bg-crumb-surface text-crumb-ink outline-none"
+            className="relative flex max-h-full w-full flex-col overflow-hidden rounded-[28px] bg-crumb-surface text-crumb-ink !outline-none"
             initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.94, y: 12 }}
             animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
             exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.97, y: 6 }}
