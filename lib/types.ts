@@ -16,6 +16,7 @@ export interface Signal {
   quote?: string; // the words spoken or shown
   captionQuote?: string; // the matching words in the written caption, if any
   appearsAt: number; // seconds into the reel
+  illustration?: string; // picture for this flag's card, when its kind's default doesn't fit
 }
 
 export interface TrustSignals {
