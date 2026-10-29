@@ -12,8 +12,6 @@ interface Props {
   startAt: number; // where the first reel starts (coming back from a thread)
   register: (id: string, el: HTMLVideoElement | null) => void;
   onAutoMuted: () => void; // the phone refused to play with sound
-  loop: boolean; // only the last reel loops; the others move on when they end
-  onEnded: (id: string) => void;
 }
 
 // One reel's video. Only the reel on screen plays; the others sit paused on
@@ -27,8 +25,6 @@ export const ReelVideo = memo(function ReelVideo({
   startAt,
   register,
   onAutoMuted,
-  loop,
-  onEnded,
 }: Props) {
   const ref = useRef<HTMLVideoElement>(null);
   const started = useRef(false);
@@ -111,10 +107,8 @@ export const ReelVideo = memo(function ReelVideo({
         className="absolute inset-0 h-full w-full bg-transparent object-cover"
         muted
         playsInline
-        loop={loop}
-        onEnded={() => {
-          if (active) onEnded(reel.id);
-        }}
+        // Every reel repeats until the tester swipes on.
+        loop
         preload={preload ? "auto" : "metadata"}
         disablePictureInPicture
         aria-label={`Reel by ${reel.creator.handle}`}

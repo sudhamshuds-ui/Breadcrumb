@@ -500,8 +500,7 @@ export function ReelsApp() {
   };
 
   // ---- a reel ends: move on to the next one, like the real app -------------
-  // If a sheet or the peek card is open, play it again instead of moving the
-  // feed out from under the tester.
+  // Whether a sheet or the peek card is open, for handlers outside render.
   const blockedRef = useRef(blocked);
   blockedRef.current = blocked;
 
@@ -515,23 +514,6 @@ export function ReelsApp() {
     el.addEventListener("wheel", hold, { passive: false });
     return () => el.removeEventListener("wheel", hold);
   }, []);
-  const onReelEnded = useCallback(
-    (id: string) => {
-      const i = reels.findIndex((r) => r.id === id);
-      if (i !== indexRef.current) return;
-      if (blockedRef.current) {
-        const v = videos.current.get(id);
-        if (v) {
-          v.currentTime = 0;
-          v.play().catch(() => {});
-        }
-        return;
-      }
-      scrollToIndex(i + 1);
-    },
-    [scrollToIndex],
-  );
-
   // ---- navigation to the Breadcrumb thread --------------------------------
   const openThread = () => {
     // Stop the reel the moment Breadcrumb opens, not when the next page lands.
@@ -633,8 +615,6 @@ export function ReelsApp() {
                     startAt={i === startIndex ? startTime : 0}
                     register={registerVideo}
                     onAutoMuted={onAutoMuted}
-                    loop={i === reels.length - 1}
-                    onEnded={onReelEnded}
                   />
                   <motion.div
                     className="absolute inset-0"
