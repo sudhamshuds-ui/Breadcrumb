@@ -22,7 +22,7 @@ export const threads: Thread[] = [
       "This reel is a ",
       { text: "paid partnership", mark: "paid_partnership" },
       " for ",
-      { text: "weight-loss medicine", mark: "product_mention" },
+      { text: "weight-loss medicine", mark: "product_mention", icon: "pill" },
       ", with a ",
       { text: "price offer", mark: "discount_code" },
       ". Evidence is ",

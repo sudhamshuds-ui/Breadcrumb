@@ -10,7 +10,6 @@ import {
 import type { Reel, Review, Thread } from "@/lib/types";
 import { addMyReview, readMyReviews } from "@/lib/my-reviews";
 import { CrumbGlyph } from "@/components/crumb/CrumbGlyph";
-import { useIconStyle } from "@/components/crumb/SignalIcon";
 import { CareSheet, type CareStart } from "./CareSheet";
 import { ReviewSheet } from "./ReviewSheet";
 import { WhatPeopleSay } from "./Reviews";
@@ -39,7 +38,6 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [mine, setMine] = useState<Review[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
-  const iconStyle = useIconStyle();
 
   // One way to a professional on screen at a time: the bottom bar shows only
   // while the care card is out of view.
@@ -99,7 +97,7 @@ export function ThreadView({ thread, reel }: { thread: Thread; reel: Reel }) {
 
           {/* What Crumb found: one sentence here, the detail one tap away */}
           <div className="mt-4">
-            <CrumbSummaryCard reel={reel} thread={thread} iconStyle={iconStyle} onOpen={() => setSummaryOpen(true)} />
+            <CrumbSummaryCard reel={reel} thread={thread} onOpen={() => setSummaryOpen(true)} />
           </div>
 
           <WhatPeopleSay thread={thread} mine={mine} onWrite={() => setWriting(true)} />

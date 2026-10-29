@@ -113,7 +113,10 @@ export interface Source {
 
 // A piece of the thread's one-sentence summary: plain text, or a phrase
 // marked with the icon of the signal kind it describes (or "evidence").
-export type SummaryPart = string | { text: string; mark: SignalKind | "evidence" };
+export type SummaryPart = string | { text: string; mark: SignalKind | "evidence"; icon?: FlagIconName };
+
+// A more specific icon than the kind's default, for a summary phrase.
+export type FlagIconName = "pill";
 
 // A creator's history across Breadcrumb. Scored per post, never as one number.
 export interface CreatorRecord {

@@ -4,11 +4,11 @@ import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowUpRight } from "lucide-react";
 import type { Reel, SignalKind, SummaryPart, Thread } from "@/lib/types";
-import { EVIDENCE_EMOJI, KIND_EMOJI, type IconStyle } from "@/lib/icon-style";
 import { CrumbGlyph } from "@/components/crumb/CrumbGlyph";
 import { EVIDENCE_ILLUSTRATION, illustrationFor } from "@/components/crumb/illustrations";
 import { EVIDENCE_LINE } from "@/components/crumb/Findings";
-import { inkStyle, SignalIcon, TrustIcon } from "@/components/crumb/SignalIcon";
+import { inkStyle } from "@/components/crumb/SignalIcon";
+import { FlagIcon } from "@/components/crumb/FlagIcon";
 import { Modal } from "./Modal";
 
 // What Crumb found, as one big sentence with icons in it and the findings in
@@ -42,12 +42,10 @@ function fallbackSummary(reel: Reel, thread: Thread): SummaryPart[] {
 export function CrumbSummaryCard({
   reel,
   thread,
-  iconStyle,
   onOpen,
 }: {
   reel: Reel;
   thread: Thread;
-  iconStyle: IconStyle;
   onOpen: () => void;
 }) {
   const parts = thread.summary ?? fallbackSummary(reel, thread);
@@ -71,7 +69,7 @@ export function CrumbSummaryCard({
             <span key={i}>{p}</span>
           ) : (
             <span key={i} className="whitespace-nowrap">
-              <InlineMark mark={p.mark} iconStyle={iconStyle} />{" "}
+              <InlineMark part={p} />{" "}
               <span className="signal-ink on-light font-medium" style={inkStyle(inkKind(p.mark), "light")}>
                 {p.text}
               </span>
@@ -85,15 +83,12 @@ export function CrumbSummaryCard({
 }
 
 // A small icon that sits in the line of text, like a word.
-function InlineMark({ mark, iconStyle }: { mark: Mark; iconStyle: IconStyle }) {
-  if (iconStyle === "line") {
-    return (
-      <span className="inline-flex translate-y-[2px] align-baseline text-crumb-ink">
-        {mark === "evidence" ? <TrustIcon name="evidence" size={17} /> : <SignalIcon kind={mark} size={17} />}
-      </span>
-    );
-  }
-  return <span className="text-[0.85em]">{mark === "evidence" ? EVIDENCE_EMOJI : KIND_EMOJI[mark]}</span>;
+function InlineMark({ part }: { part: Exclude<SummaryPart, string> }) {
+  return (
+    <span className="inline-flex translate-y-[3px]">
+      <FlagIcon mark={part.mark} icon={part.icon} size={21} />
+    </span>
+  );
 }
 
 export function CrumbSummaryModal({
