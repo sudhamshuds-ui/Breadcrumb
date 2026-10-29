@@ -301,6 +301,8 @@ The user works on both a Windows PC (`D:\projects\Breadcrumb`) and a Mac (cloned
 - **Wording**: neutral and hedged ("no disclosure seen", "Linked sources don't support them yet").
 - **Motion**: no endless decorative loops (the caption gradient flows 3 times, then rests).
 - **Videos must be H.264 MP4 at original quality.** A VP9 export played in desktop Chrome but was blank on iPhone, and heavy compression (RF 28) looked too poor. Before pushing any new video, check for `avc1` (not `vp09`/`hev1`) and the moov box before mdat. Every reel needs a poster still.
+- **Next.js 16.4.3** (security upgrade, PR #1, merged 2026-10-29). `experimental.agentUpgrade: "security"` in `next.config.ts` is from that upgrade. Local `next build` refuses to run on a version with a known advisory, so keep Next.js patched.
+- **Thread pages preload**: the feed calls `router.prefetch` on every thread about 1.5 s after it opens (`ReelsApp.tsx`), so "See the thread" opens instantly instead of queuing behind the reel videos.
 - **Tailwind via `@tailwindcss/postcss`**: the Turbopack loader didn't hot-reload CSS.
 - **Thread pages: cards on the page, detail in modals.** Every section is a calm card; tapping opens a centred modal card. Folding lists inside modals keep one item open at a time. Emoji marks stay (user's choice) even though Impeccable's craft floor prefers drawn icons.
 - **Three signals, never a trust score** (PRODUCT.md, binding): asked again on 2026-10-29 and kept as three pills.
@@ -315,7 +317,6 @@ The user works on both a Windows PC (`D:\projects\Breadcrumb`) and a Mac (cloned
 - **Debug panel** (`components/dev/DebugHud.tsx`): `?debug=1` / `?debug=0`, or tap the top-left "Reels" corner 5 times quickly (works in the home-screen app). Shows window/viewport/scroll numbers, the widget's position, and for each touch what iOS hit vs what's drawn there. Workaround for testing: open in Safari, or pull down once per session.
 - **Wrong URLs show a 404** (`/Reels`, `/reel`). A forgiving redirect to `/reels` has been offered but not built.
 - **Home-screen icon** is generic.
-- **Next.js security upgrade (16.4.0 to 16.4.3)** is a draft PR, `sudhamshuds-ui/Breadcrumb#1` (branch `next-security-16.4.3`, worktree `D:\projects\Breadcrumb-next-upgrade`). It was cut from `main` before the thread redesign merged: bring it up to date with `main`, check, then merge. Not live yet.
 - **Wording**: reel 1's TGA source title says "scams" (the real headline). Breaks the "never say scam" rule on screen; the user hasn't decided whether to show it as "TGA warning on semaglutide sold online".
 - **Reel 5 review count**: its pill and "View all" say 3 reviews (`trust.community.reviews`) but only 2 are listed. Pre-existing data.
 - **"Write a review"** still opens the old bottom sheet; every other detail is a modal card.
@@ -323,7 +324,7 @@ The user works on both a Windows PC (`D:\projects\Breadcrumb`) and a Mac (cloned
 
 ### Next step
 
-Have the user check the redesigned threads on their iPhone (refresh once; home-screen app: close and reopen), then merge the Next.js security PR after bringing it up to date with `main`.
+Have the user check the redesigned threads on their iPhone (refresh once; home-screen app: close and reopen). The old upgrade worktree `D:\projects\Breadcrumb-next-upgrade` can be removed.
 
 ---
 
